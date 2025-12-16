@@ -6,10 +6,10 @@ load_dotenv()
 class Config:
     """
     GERENCIA CENTRAL: Define las reglas inmutables del ecosistema.
-    VERSION: 10.0 (Añadido Perfil SNIPER V11)
+    VERSION: 11.5 (Panel de Control de Estrategias)
     """
     # --- 1. IDENTIDAD Y CREDENCIALES ---
-    BOT_NAME = "SENTINEL SNIPER V10.0"
+    BOT_NAME = "SENTINEL PRO V11.5 (SWITCH PANEL)"
     API_KEY = os.getenv('BINANCE_API_KEY', '')
     API_SECRET = os.getenv('BINANCE_API_SECRET', '')
     TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', '')
@@ -27,10 +27,15 @@ class Config:
     CYCLE_DASH = 3
     CYCLE_SLOW = 10
 
-    # --- 3. PERFIL ESTRATÉGICO (SNIPER V11) ---
+    # --- 3. CONTROL DE ESTRATEGIAS (INTERRUPTORES) ---
+    # Configura True/False para activar/desactivar lógicas sin borrar código.
+    ENABLE_STRATEGY_SNIPER = False  # <--- DORMIDO (Modo Hibernación)
+    ENABLE_STRATEGY_GAMMA = True    # <--- ACTIVO (Modo Operativo)
+
+    # --- 4. PERFIL ESTRATÉGICO (SNIPER V11) ---
     class SniperConfig:
-        RISK_PER_TRADE = 0.05    # 5% Riesgo por operación (High Stakes)
-        STOP_LOSS_PCT = 0.05     # 5% Distancia de SL (Swing amplio)
+        RISK_PER_TRADE = 0.05    # 5% Riesgo por operación
+        STOP_LOSS_PCT = 0.05     # 5% Distancia de SL
         
         # Plan de Salida Escalonada (TPs)
         TP_PLAN = [
@@ -39,7 +44,24 @@ class Config:
             {'dist': 0.12, 'qty_pct': 0.30, 'move_sl': 'NONE'} # TP3: 12%
         ]
 
-    # --- 4. RUTAS ---
+    # --- 5. PERFIL ESTRATÉGICO (GAMMA SCALPING) ---
+    class GammaConfig:
+        """
+        Configuración para Operativa de Alta Frecuencia (15m)
+        """
+        RISK_USD_FIXED = 100.0        # Riesgo monetario fijo ($50 USD)
+        STOP_LOSS_PCT = 0.015        # 1.5% Stop Loss (Estricto)
+        TP1_PCT = 0.05               # 5.0% Take Profit Estructural
+        
+        # Gestión Dinámica (Contralor)
+        TP_DYNAMIC_THRESHOLD = 150.0 # Ganancia USD para activar cierre parcial
+        TP_DYNAMIC_QTY_PCT = 0.25    # % de la posición a cerrar al tocar umbral
+        
+        # Smart Trailing (RSI 15m)
+        RSI_TRAILING_DIST_NORMAL = 0.03   # 3% Trailing Normal
+        RSI_TRAILING_DIST_EXTREME = 0.015 # 1.5% Trailing Apretado (Extremo)
+
+    # --- 6. RUTAS ---
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DIR_LOGS = os.path.join(BASE_DIR, 'logs')
     FILE_LOG_ERRORS = os.path.join(DIR_LOGS, 'bitacora_errores.csv')

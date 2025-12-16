@@ -1,210 +1,273 @@
-2025-12-10 22:29:24,990 | INFO | [ORDER_MANAGER] 🔫 Iniciando ejecución: TEST_LAB (LONG)
-2025-12-10 22:29:24,991 | INFO | [ORDER_MANAGER] ✅ Entrada Confirmada (ID: c33ce35a). Precio aprox: 100.0
-2025-12-10 22:29:24,992 | INFO | [ORDER_MANAGER] 🛡️ Stop Loss activado @ 98.0 (ID: b2d2d6ee)
-2025-12-10 22:29:24,992 | INFO | [ORDER_MANAGER] 💰 TP colocado @ 105.0 (Qty: 0.5)
-2025-12-10 22:29:24,993 | INFO | [ORDER_MANAGER] 💰 TP colocado @ 110.0 (Qty: 0.5)
-2025-12-10 22:29:24,994 | INFO | [AUDITORIA] 📝 Orden 8dfebed5 asentada en libros.
-2025-12-10 22:29:24,996 | INFO | [CONTRALOR] 🔒 Posición 8dfebed5 bajo custodia.
-2025-12-10 22:29:26,003 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error cancelando orden b2d2d6ee: 'MockAPIManager' object has no attribute 'client'
-2025-12-10 22:29:26,004 | INFO | [CONTRALOR] 🛡️ B/E Activado para 8dfebed5. SL movido a entrada.
-2025-12-10 22:29:27,006 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error cancelando orden f7c68274: 'MockAPIManager' object has no attribute 'client'
-2025-12-10 22:29:27,008 | INFO | [CONTRALOR] 🚀 Trailing Stop actualizado para 8dfebed5 a 101.47
-2025-12-10 22:29:28,012 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error cancelando orden f661cc8f: 'MockAPIManager' object has no attribute 'client'
-2025-12-10 22:29:28,014 | INFO | [CONTRALOR] 🚀 Trailing Stop actualizado para 8dfebed5 a 101.97
-2025-12-10 22:49:18,830 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-10 22:49:18,830 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures...
-2025-12-10 22:49:20,405 | ERROR | [API_MANAGER] ❌ CRITICO: Error configurando cuenta: (401, -2015, 'Invalid API-key, IP, or permissions for action', {'Content-Type': 'application/json', 'Content-Length': '69', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 02:49:19 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Tengine', 'x-mbx-used-weight-1m': '2', 'x-response-time': '1ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 43527a66b9abd8db1ac04c9f7ae85b14.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG51-P1', 'X-Amz-Cf-Id': 'LjWQdztF6KTBz7gRogGp3hIuEnMJB4Y3nSG-kLiDqIz8CEwjmizb8g=='})
-2025-12-10 22:49:20,406 | ERROR | [API_MANAGER] ❌ CRITICO: Fallo crítico de conexión: (401, -2015, 'Invalid API-key, IP, or permissions for action', {'Content-Type': 'application/json', 'Content-Length': '69', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 02:49:19 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Tengine', 'x-mbx-used-weight-1m': '2', 'x-response-time': '1ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 43527a66b9abd8db1ac04c9f7ae85b14.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG51-P1', 'X-Amz-Cf-Id': 'LjWQdztF6KTBz7gRogGp3hIuEnMJB4Y3nSG-kLiDqIz8CEwjmizb8g=='})
-2025-12-10 22:49:20,408 | ERROR | [MAIN] ❌ CRITICO: Fallo en arranque: (401, -2015, 'Invalid API-key, IP, or permissions for action', {'Content-Type': 'application/json', 'Content-Length': '69', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 02:49:19 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Tengine', 'x-mbx-used-weight-1m': '2', 'x-response-time': '1ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 43527a66b9abd8db1ac04c9f7ae85b14.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG51-P1', 'X-Amz-Cf-Id': 'LjWQdztF6KTBz7gRogGp3hIuEnMJB4Y3nSG-kLiDqIz8CEwjmizb8g=='})
-2025-12-10 22:54:37,340 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-10 22:54:37,340 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-10 22:54:40,225 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-10 22:54:40,241 | INFO | [CONTRALOR] ♻️ Recuperando posición 8dfebed5 de la memoria.
-2025-12-10 22:54:40,242 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
-2025-12-10 22:54:40,247 | INFO | [DATA_MANAGER]    >> 1m: No hay data local. Se descargará inicial.
-2025-12-10 22:54:40,888 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
-2025-12-10 22:54:43,686 | ERROR | [MAIN] ❌ CRITICO: Fallo en arranque: 'BBU_20_2.0'
-2025-12-10 23:04:41,060 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-10 23:04:41,061 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-10 23:04:43,542 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-10 23:04:43,543 | INFO | [CONTRALOR] ♻️ Recuperando posición 8dfebed5 de la memoria.
-2025-12-10 23:04:43,543 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
-2025-12-10 23:04:43,544 | INFO | [DATA_MANAGER]    >> 1m: No hay data local o nombre incorrecto. Se descargará inicial.
-2025-12-10 23:04:44,105 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
-2025-12-10 23:04:44,444 | INFO | [DATA_MANAGER]    >> 5m: No hay data local o nombre incorrecto. Se descargará inicial.
-2025-12-10 23:04:44,987 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
-2025-12-10 23:04:45,010 | INFO | [DATA_MANAGER]    >> 15m: No hay data local o nombre incorrecto. Se descargará inicial.
-2025-12-10 23:04:46,383 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
-2025-12-10 23:04:46,408 | INFO | [DATA_MANAGER]    >> 1h: No hay data local o nombre incorrecto. Se descargará inicial.
-2025-12-10 23:04:47,154 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
-2025-12-10 23:04:47,181 | INFO | [DATA_MANAGER]    >> 4h: No hay data local o nombre incorrecto. Se descargará inicial.
-2025-12-10 23:04:47,732 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
-2025-12-10 23:04:47,753 | INFO | [DATA_MANAGER]    >> 1d: No hay data local o nombre incorrecto. Se descargará inicial.
-2025-12-10 23:04:49,175 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
-2025-12-10 23:04:49,211 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
-2025-12-10 23:04:49,211 | INFO | [MAIN] ✅ Todos los departamentos operativos. Sistema ONLINE.
-2025-12-10 23:04:49,731 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:04:48 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '53', 'x-response-time': '2ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': 'mBtPy5Pep6H1l-ONIV5fO9ScIhkUnus0e3XRZEuFrWgPV9BwLqOv_g=='})
-2025-12-10 23:04:49,999 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Binance rechazó orden: Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.
-2025-12-10 23:04:50,278 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:04:49 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '34', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': '5p1MRxOJJdRmVOByBk6nNhDY1W3LFAQXeF0PWSxD7yhJ5o5mhGxvvg=='})
-2025-12-10 23:04:50,537 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Binance rechazó orden: Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.
-2025-12-10 23:04:52,566 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:04:51 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '23', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': 'llnVcRKBCqMTiIVPFKAQ7oSJU3CDaEM4dIl9ZA9uq-ss5p2sbqgMcw=='})
-2025-12-10 23:04:52,825 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Binance rechazó orden: Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.
-2025-12-10 23:04:53,110 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:04:52 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '6', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': 'NBuK3BIrQpZoeW31HOvK3uy6Mw1jpbw2vacfV7_dG5EFOt5x4Xwqug=='})
-2025-12-10 23:04:53,777 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Binance rechazó orden: Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.
-2025-12-10 23:04:55,831 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:04:54 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '10', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': 'wGzHJ8pSe8huKqC67F2s6EChoBYXXC3nRC4G_-ULEA9nV8tqabNgwA=='})
-2025-12-10 23:04:56,241 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Binance rechazó orden: Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.
-2025-12-10 23:04:57,059 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:04:56 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '9', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': 'om0YFDdo41ni66Uqqh9_3bFGi9q1JSp8fYzZ16gYHD3IaBjII_gubA=='})
-2025-12-10 23:04:57,367 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Binance rechazó orden: Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.
-2025-12-10 23:05:00,880 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:05:00 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '1', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': '54f-w5oXMrpLUbUSM05ZZVc80SBw26Y5RwQzXkim-zBy6Hl0C8SOtA=='})
-2025-12-10 23:05:01,771 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Binance rechazó orden: Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.
-2025-12-10 23:05:02,177 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:05:01 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '1', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': 'UCw-wMbS1Egug_an5BqUZB-Rk8zoC9smxujJeU6Qa5iYFUiIQHNNog=='})
-2025-12-10 23:05:03,612 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Binance rechazó orden: Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.
-2025-12-10 23:05:06,482 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:05:05 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '1', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': 'oc7DmLmkjYFwVufBAI4xIV4c_kYIoKe07Aw8k0MXL7H4_hrSo2skJg=='})
-2025-12-10 23:05:06,806 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Binance rechazó orden: Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.
-2025-12-10 23:05:08,019 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error cancelando orden UNKNOWN_ON_RESTART: (400, -1102, "Mandatory parameter 'orderid' was not sent, was empty/null, or malformed.", {'Content-Type': 'application/json', 'Content-Length': '96', 'Connection': 'keep-alive', 'Date': 'Thu, 11 Dec 2025 03:05:06 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '1', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 975617464234925f8d09b6969ec6238c.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'BOG50-P2', 'X-Amz-Cf-Id': 'G1elJesn33ztEACYH8mSpWOOqo2XlWhChUzbBW3b8BJ8V3cbhYoADg=='})
-2025-12-10 23:05:08,371 | INFO | [MAIN] Usuario solicitó detención (KeyboardInterrupt).
-2025-12-10 23:11:43,634 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-10 23:11:43,635 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-10 23:11:45,465 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-10 23:11:45,481 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
-2025-12-10 23:11:45,522 | INFO | [DATA_MANAGER]    >> 1m: Data local encontrada hasta 2025-12-10 23:04
-2025-12-10 23:11:45,804 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
-2025-12-10 23:11:46,186 | INFO | [DATA_MANAGER]    >> 5m: Data local encontrada hasta 2025-12-10 23:00
-2025-12-10 23:11:46,475 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
-2025-12-10 23:11:46,546 | INFO | [DATA_MANAGER]    >> 15m: Data local encontrada hasta 2025-12-10 23:00
-2025-12-10 23:11:46,810 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
-2025-12-10 23:11:46,864 | INFO | [DATA_MANAGER]    >> 1h: Data local encontrada hasta 2025-12-10 23:00
-2025-12-10 23:11:47,552 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
-2025-12-10 23:11:47,598 | INFO | [DATA_MANAGER]    >> 4h: Data local encontrada hasta 2025-12-10 20:00
-2025-12-10 23:11:47,872 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
-2025-12-10 23:11:48,016 | INFO | [DATA_MANAGER]    >> 1d: Data local encontrada hasta 2025-12-10 20:00
-2025-12-10 23:11:48,735 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
-2025-12-10 23:11:48,761 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
-2025-12-10 23:11:48,762 | INFO | [MAIN] ✅ Todos los departamentos operativos. Sistema ONLINE.
-2025-12-10 23:46:04,262 | INFO | [MAIN] Usuario solicitó detención (KeyboardInterrupt).
-2025-12-10 23:57:48,612 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-10 23:57:48,613 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-10 23:57:50,883 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-10 23:57:51,703 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
-2025-12-10 23:57:51,743 | INFO | [DATA_MANAGER]    >> 1m: Data local encontrada hasta 2025-12-10 23:11
-2025-12-10 23:57:52,011 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
-2025-12-10 23:57:52,460 | INFO | [DATA_MANAGER]    >> 5m: Data local encontrada hasta 2025-12-10 23:10
-2025-12-10 23:57:52,829 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
-2025-12-10 23:57:52,890 | INFO | [DATA_MANAGER]    >> 15m: Data local encontrada hasta 2025-12-10 23:00
-2025-12-10 23:57:53,645 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
-2025-12-10 23:57:53,696 | INFO | [DATA_MANAGER]    >> 1h: Data local encontrada hasta 2025-12-10 23:00
-2025-12-10 23:57:54,054 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
-2025-12-10 23:57:54,110 | INFO | [DATA_MANAGER]    >> 4h: Data local encontrada hasta 2025-12-10 20:00
-2025-12-10 23:57:54,468 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
-2025-12-10 23:57:54,624 | INFO | [DATA_MANAGER]    >> 1d: Data local encontrada hasta 2025-12-10 20:00
-2025-12-10 23:57:54,975 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
-2025-12-10 23:57:54,993 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
-2025-12-10 23:57:54,994 | INFO | [MAIN] ✅ Todos los departamentos operativos. Sistema ONLINE.
-2025-12-11 00:00:21,602 | INFO | [MAIN] Usuario solicitó detención (KeyboardInterrupt).
-2025-12-11 00:00:28,593 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-11 00:00:28,593 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-11 00:00:31,445 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-11 00:00:31,754 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
-2025-12-11 00:00:31,816 | INFO | [DATA_MANAGER]    >> 1m: Data local encontrada hasta 2025-12-10 23:56
-2025-12-11 00:00:32,078 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
-2025-12-11 00:00:32,430 | INFO | [DATA_MANAGER]    >> 5m: Data local encontrada hasta 2025-12-10 23:55
-2025-12-11 00:00:33,184 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
-2025-12-11 00:00:33,233 | INFO | [DATA_MANAGER]    >> 15m: Data local encontrada hasta 2025-12-10 23:45
-2025-12-11 00:00:33,495 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
-2025-12-11 00:00:33,548 | INFO | [DATA_MANAGER]    >> 1h: Data local encontrada hasta 2025-12-10 23:00
-2025-12-11 00:00:33,831 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
-2025-12-11 00:00:33,874 | INFO | [DATA_MANAGER]    >> 4h: Data local encontrada hasta 2025-12-10 20:00
-2025-12-11 00:00:34,213 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
-2025-12-11 00:00:34,362 | INFO | [DATA_MANAGER]    >> 1d: Data local encontrada hasta 2025-12-10 20:00
-2025-12-11 00:00:35,141 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
-2025-12-11 00:00:35,164 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
-2025-12-11 00:00:35,165 | INFO | [MAIN] ✅ Todos los departamentos operativos. Sistema ONLINE.
-2025-12-11 00:08:43,965 | INFO | [MAIN] Usuario solicitó detención (KeyboardInterrupt).
-2025-12-11 00:19:07,486 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-11 00:19:07,487 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-11 00:19:11,038 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-11 00:19:11,305 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
-2025-12-11 00:19:11,361 | INFO | [DATA_MANAGER]    >> 1m: Data local encontrada hasta 2025-12-10 23:58
-2025-12-11 00:19:11,632 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
-2025-12-11 00:19:12,368 | INFO | [DATA_MANAGER]    >> 5m: Data local encontrada hasta 2025-12-10 23:55
-2025-12-11 00:19:13,150 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
-2025-12-11 00:19:13,209 | INFO | [DATA_MANAGER]    >> 15m: Data local encontrada hasta 2025-12-11 00:00
-2025-12-11 00:19:13,534 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
-2025-12-11 00:19:13,585 | INFO | [DATA_MANAGER]    >> 1h: Data local encontrada hasta 2025-12-10 23:00
-2025-12-11 00:19:14,377 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
-2025-12-11 00:19:14,427 | INFO | [DATA_MANAGER]    >> 4h: Data local encontrada hasta 2025-12-11 00:00
-2025-12-11 00:19:14,784 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
-2025-12-11 00:19:15,102 | INFO | [DATA_MANAGER]    >> 1d: Data local encontrada hasta 2025-12-10 20:00
-2025-12-11 00:19:15,398 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
-2025-12-11 00:19:15,417 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
-2025-12-11 00:19:15,427 | ERROR | [MAIN] ❌ CRITICO: Fallo en arranque: type object 'Config' has no attribute 'TELEGRAM_TOKEN'
-2025-12-11 00:22:06,543 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-11 00:22:06,544 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-11 00:22:09,277 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-11 00:22:09,584 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
-2025-12-11 00:22:09,622 | INFO | [DATA_MANAGER]    >> 1m: Data local encontrada hasta 2025-12-11 00:18
-2025-12-11 00:22:10,408 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
-2025-12-11 00:22:10,842 | INFO | [DATA_MANAGER]    >> 5m: Data local encontrada hasta 2025-12-11 00:15
-2025-12-11 00:22:11,635 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
-2025-12-11 00:22:11,694 | INFO | [DATA_MANAGER]    >> 15m: Data local encontrada hasta 2025-12-11 00:15
-2025-12-11 00:22:12,039 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
-2025-12-11 00:22:12,083 | INFO | [DATA_MANAGER]    >> 1h: Data local encontrada hasta 2025-12-11 00:00
-2025-12-11 00:22:12,450 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
-2025-12-11 00:22:12,495 | INFO | [DATA_MANAGER]    >> 4h: Data local encontrada hasta 2025-12-11 00:00
-2025-12-11 00:22:13,270 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
-2025-12-11 00:22:13,428 | INFO | [DATA_MANAGER]    >> 1d: Data local encontrada hasta 2025-12-10 20:00
-2025-12-11 00:22:14,104 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
-2025-12-11 00:22:14,132 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
-2025-12-11 00:22:14,133 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
-2025-12-11 00:22:14,142 | INFO | [MAIN] ✅ Todos los departamentos operativos. Sistema ONLINE.
-2025-12-11 00:22:14,649 | INFO | [TELEGRAM] 👂 Escuchando comandos...
-2025-12-11 01:23:37,472 | INFO | [MAIN] Usuario solicitó detención (KeyboardInterrupt).
-2025-12-11 02:23:07,473 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-11 02:23:10,954 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-11 23:52:55,476 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-11 23:52:57,949 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-12 14:24:53,625 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-12 14:24:56,129 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-12 14:24:56,130 | INFO | [MAIN] --- INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-12 20:06:52,019 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-12 20:06:52,020 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-12 20:06:53,956 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-12 20:06:54,731 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
-2025-12-12 20:06:55,570 | INFO | [DATA_MANAGER]    >> 1m: Data local encontrada hasta 2025-12-11 23:59
-2025-12-12 20:06:56,230 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
-2025-12-12 20:07:01,277 | INFO | [DATA_MANAGER]    >> 5m: Data local encontrada hasta 2025-12-11 23:55
-2025-12-12 20:07:01,989 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
-2025-12-12 20:07:03,116 | INFO | [DATA_MANAGER]    >> 15m: Data local encontrada hasta 2025-12-11 23:45
-2025-12-12 20:07:03,397 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
-2025-12-12 20:07:03,781 | INFO | [DATA_MANAGER]    >> 1h: Data local encontrada hasta 2025-12-11 23:00
-2025-12-12 20:07:04,053 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
-2025-12-12 20:07:04,218 | INFO | [DATA_MANAGER]    >> 4h: Data local encontrada hasta 2025-12-11 20:00
-2025-12-12 20:07:04,932 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
-2025-12-12 20:07:04,987 | INFO | [DATA_MANAGER]    >> 1d: Data local encontrada hasta 2025-12-11 20:00
-2025-12-12 20:07:05,265 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
-2025-12-12 20:07:05,275 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
-2025-12-12 20:07:05,277 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
-2025-12-12 20:07:05,279 | INFO | [MAIN] ✅ Todos los departamentos operativos. Sistema ONLINE.
-2025-12-12 20:07:05,800 | INFO | [TELEGRAM] 👂 Escuchando comandos...
-2025-12-12 20:07:18,668 | INFO | [MAIN] Usuario solicitó detención (KeyboardInterrupt).
-2025-12-12 20:16:42,722 | INFO | [MAIN] --- SISTEMA INICIANDO SECUENCIA DE ARRANQUE ---
-2025-12-12 20:16:42,722 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
-2025-12-12 20:16:44,910 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
-2025-12-12 20:16:45,204 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
-2025-12-12 20:16:45,882 | INFO | [DATA_MANAGER]    >> 1m: Data local encontrada hasta 2025-12-12 16:39
-2025-12-12 20:16:46,203 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
-2025-12-12 20:16:51,109 | INFO | [DATA_MANAGER]    >> 5m: Data local encontrada hasta 2025-12-12 20:05
-2025-12-12 20:16:51,401 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
-2025-12-12 20:16:52,461 | INFO | [DATA_MANAGER]    >> 15m: Data local encontrada hasta 2025-12-12 20:00
-2025-12-12 20:16:52,733 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
-2025-12-12 20:16:53,109 | INFO | [DATA_MANAGER]    >> 1h: Data local encontrada hasta 2025-12-12 20:00
-2025-12-12 20:16:53,367 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
-2025-12-12 20:16:53,467 | INFO | [DATA_MANAGER]    >> 4h: Data local encontrada hasta 2025-12-12 20:00
-2025-12-12 20:16:53,723 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
-2025-12-12 20:16:53,762 | INFO | [DATA_MANAGER]    >> 1d: Data local encontrada hasta 2025-12-12 20:00
-2025-12-12 20:16:54,019 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
-2025-12-12 20:16:54,030 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
-2025-12-12 20:16:54,032 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
-2025-12-12 20:16:54,035 | INFO | [MAIN] ✅ Todos los departamentos operativos. Sistema ONLINE.
-2025-12-12 20:16:54,526 | INFO | [TELEGRAM] 👂 Escuchando comandos...
-2025-12-12 20:19:20,094 | INFO | [MAIN] Usuario solicitó detención (KeyboardInterrupt).
+2025-12-13 20:42:00,822 | INFO | [MAIN] --- INICIANDO SECUENCIA DE ARRANQUE ---
+2025-12-13 20:42:00,823 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-13 20:42:02,990 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-13 20:42:03,754 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
+2025-12-13 20:42:04,402 | INFO | [DATA_MANAGER]    >> 1m: Data local encontrada hasta 2025-12-13 20:37
+2025-12-13 20:42:05,314 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
+2025-12-13 20:42:10,876 | INFO | [DATA_MANAGER]    >> 5m: Data local encontrada hasta 2025-12-13 20:35
+2025-12-13 20:42:11,666 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
+2025-12-13 20:42:12,899 | INFO | [DATA_MANAGER]    >> 15m: Data local encontrada hasta 2025-12-13 20:30
+2025-12-13 20:42:13,209 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
+2025-12-13 20:42:13,592 | INFO | [DATA_MANAGER]    >> 1h: Data local encontrada hasta 2025-12-13 20:00
+2025-12-13 20:42:13,870 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
+2025-12-13 20:42:13,986 | INFO | [DATA_MANAGER]    >> 4h: Data local encontrada hasta 2025-12-13 20:00
+2025-12-13 20:42:14,814 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
+2025-12-13 20:42:14,870 | INFO | [DATA_MANAGER]    >> 1d: Data local encontrada hasta 2025-12-13 20:00
+2025-12-13 20:42:15,257 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
+2025-12-13 20:42:15,269 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
+2025-12-13 20:42:15,272 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
+2025-12-13 20:42:15,274 | INFO | [MAIN] ✅ Sistema ONLINE.
+2025-12-13 20:42:15,850 | INFO | [TELEGRAM] 👂 Escuchando comandos...
+2025-12-14 02:27:58,952 | INFO | [MAIN] Usuario solicitó detención.
+2025-12-14 02:29:57,631 | INFO | [MAIN] --- INICIANDO SECUENCIA DE ARRANQUE ---
+2025-12-14 02:29:57,632 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-14 02:30:00,874 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-14 02:30:01,168 | INFO | [DATA_MANAGER] 📂 Iniciando carga y sincronización de datos históricos...
+2025-12-14 02:30:01,900 | INFO | [DATA_MANAGER]    >> 1m: Data local encontrada hasta 2025-12-13 20:41
+2025-12-14 02:30:02,858 | INFO | [DATA_MANAGER]    >> 1m: Calculando indicadores técnicos...
+2025-12-14 02:30:07,886 | INFO | [DATA_MANAGER]    >> 5m: Data local encontrada hasta 2025-12-13 20:40
+2025-12-14 02:30:08,748 | INFO | [DATA_MANAGER]    >> 5m: Calculando indicadores técnicos...
+2025-12-14 02:30:09,863 | INFO | [DATA_MANAGER]    >> 15m: Data local encontrada hasta 2025-12-13 20:30
+2025-12-14 02:30:10,685 | INFO | [DATA_MANAGER]    >> 15m: Calculando indicadores técnicos...
+2025-12-14 02:30:11,048 | INFO | [DATA_MANAGER]    >> 1h: Data local encontrada hasta 2025-12-13 20:00
+2025-12-14 02:30:11,396 | INFO | [DATA_MANAGER]    >> 1h: Calculando indicadores técnicos...
+2025-12-14 02:30:11,510 | INFO | [DATA_MANAGER]    >> 4h: Data local encontrada hasta 2025-12-13 20:00
+2025-12-14 02:30:12,323 | INFO | [DATA_MANAGER]    >> 4h: Calculando indicadores técnicos...
+2025-12-14 02:30:12,364 | INFO | [DATA_MANAGER]    >> 1d: Data local encontrada hasta 2025-12-13 20:00
+2025-12-14 02:30:13,239 | INFO | [DATA_MANAGER]    >> 1d: Calculando indicadores técnicos...
+2025-12-14 02:30:13,253 | INFO | [DATA_MANAGER] ✅ Base de datos sincronizada y lista.
+2025-12-14 02:30:13,255 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
+2025-12-14 02:30:13,256 | INFO | [MAIN] ✅ Sistema ONLINE.
+2025-12-14 02:30:13,847 | INFO | [TELEGRAM] 👂 Escuchando comandos...
+2025-12-14 14:04:02,216 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error obteniendo posiciones: (400, -1021, 'Timestamp for this request is outside of the recvWindow.', {'Content-Type': 'application/json', 'Content-Length': '79', 'Connection': 'keep-alive', 'Date': 'Sun, 14 Dec 2025 18:04:01 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '5', 'x-response-time': '0ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 6bac35b431fa5f486f93e46d955560b4.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'MIA50-P7', 'X-Amz-Cf-Id': 'Zpr8Vb1aA8byaQAztGvM5jqd_ysmQxJdJ18BPK-A-bk5RoKxG0TjXw=='})
+2025-12-15 10:29:04,085 | INFO | [MAIN] Usuario solicitó detención.
+2025-12-15 10:30:17,112 | INFO | [MAIN] --- INICIANDO SECUENCIA DE ARRANQUE ---
+2025-12-15 10:30:17,113 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 10:30:19,797 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 10:30:20,102 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 10:30:21,859 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 10:30:29,136 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 167 zonas nuevas detectadas.
+2025-12-15 10:30:29,391 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
+2025-12-15 10:30:29,400 | INFO | [MAIN] ✅ Sistema ONLINE.
+2025-12-15 10:30:29,958 | INFO | [TELEGRAM] 👂 Escuchando comandos...
+2025-12-15 10:30:39,177 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 22 zonas nuevas detectadas.
+2025-12-15 10:51:03,951 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 11:01:49,309 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 11:16:48,334 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 11:21:18,063 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 11:46:48,250 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 12:02:11,275 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 12:11:44,003 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 12:36:31,028 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 12:46:02,799 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 12:56:18,212 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 13:11:52,035 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 13:35:22,313 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 13:46:33,948 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 13:55:52,961 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 14:01:00,682 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 14:17:15,468 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 14:17:16,661 | INFO | [SHOOTER] 🎯 GAMMA PLAN: LONG @ 181.11. Qty: 36.810 
+2025-12-15 14:17:16,661 | INFO | [MAIN] ⚡ Señal SCALPING_GAMMA confirmada. Ejecutando...
+2025-12-15 14:17:16,661 | INFO | [ORDER_MANAGER] 🔫 Iniciando ejecución: SCALPING_GAMMA (LONG)
+2025-12-15 14:17:17,462 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73797398: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:17:17,965 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73797398: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:17:18,467 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73797398: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:17:18,969 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73797398: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:17:19,471 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73797398: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:17:19,975 | INFO | [ORDER_MANAGER] ⚠️ Orden enviada pero no confirmada FILLED a tiempo. Asumiendo ejecución.
+2025-12-15 14:17:20,749 | INFO | [ORDER_MANAGER] ✅ Entrada Confirmada (ID: 73797398). Precio Base: 181.17
+2025-12-15 14:17:21,056 | INFO | [ORDER_MANAGER] 🛡️ Stop Loss activado @ 178.39
+2025-12-15 14:17:21,777 | INFO | [ORDER_MANAGER] 💰 TP colocado @ 190.17 (Qty: 18.4)
+2025-12-15 14:17:21,780 | INFO | [AUDITORIA] 📝 Orden f90068e8 asentada en libros.
+2025-12-15 14:17:21,780 | INFO | [CONTRALOR] 🔒 Posición f90068e8 bajo custodia.
+2025-12-15 14:17:58,271 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.03%)
+2025-12-15 14:18:39,391 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.01%)
+2025-12-15 14:19:17,494 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.08%)
+2025-12-15 14:19:56,499 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.08%)
+2025-12-15 14:20:34,133 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.04%)
+2025-12-15 14:21:11,620 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.04%)
+2025-12-15 14:21:50,437 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.04%)
+2025-12-15 14:22:32,757 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.13%)
+2025-12-15 14:23:12,443 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.13%)
+2025-12-15 14:23:50,687 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.13%)
+2025-12-15 14:24:30,678 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.19%)
+2025-12-15 14:25:06,707 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.19%)
+2025-12-15 14:25:43,883 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.19%)
+2025-12-15 14:26:23,519 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.22%)
+2025-12-15 14:27:03,004 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.22%)
+2025-12-15 14:27:42,903 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.24%)
+2025-12-15 14:28:21,848 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.24%)
+2025-12-15 14:29:01,076 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.24%)
+2025-12-15 14:29:41,593 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.07%)
+2025-12-15 14:30:16,998 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.07%)
+2025-12-15 14:30:52,016 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.07%)
+2025-12-15 14:31:30,942 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.07%)
+2025-12-15 14:32:08,362 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.23%)
+2025-12-15 14:32:44,104 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.23%)
+2025-12-15 14:33:22,597 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.26%)
+2025-12-15 14:34:00,310 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.26%)
+2025-12-15 14:34:38,700 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.26%)
+2025-12-15 14:35:14,898 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.26%)
+2025-12-15 14:35:51,924 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 14:35:53,047 | INFO | [SHOOTER] 🎯 GAMMA PLAN: LONG @ 179.89. Qty: 37.060 
+2025-12-15 14:35:53,048 | INFO | [MAIN] ⚡ Señal SCALPING_GAMMA confirmada. Ejecutando...
+2025-12-15 14:35:53,048 | INFO | [ORDER_MANAGER] 🔫 Iniciando ejecución: SCALPING_GAMMA (LONG)
+2025-12-15 14:35:53,338 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73801149: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:35:53,841 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73801149: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:35:54,344 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73801149: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:35:54,847 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73801149: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:35:55,349 | ERROR | [ORDER_MANAGER] ❌ ADVERTENCIA: Error polling orden 73801149: 'UMFutures' object has no attribute 'get_order'
+2025-12-15 14:35:55,850 | INFO | [ORDER_MANAGER] ⚠️ Orden enviada pero no confirmada FILLED a tiempo. Asumiendo ejecución.
+2025-12-15 14:35:56,118 | INFO | [ORDER_MANAGER] ✅ Entrada Confirmada (ID: 73801149). Precio Base: 179.76
+2025-12-15 14:35:56,411 | INFO | [ORDER_MANAGER] 🛡️ Stop Loss activado @ 177.19
+2025-12-15 14:35:56,687 | INFO | [ORDER_MANAGER] 💰 TP colocado @ 188.88 (Qty: 18.5)
+2025-12-15 14:35:56,689 | INFO | [AUDITORIA] 📝 Orden 92214f00 asentada en libros.
+2025-12-15 14:35:56,689 | INFO | [CONTRALOR] 🔒 Posición 92214f00 bajo custodia.
+2025-12-15 14:36:19,962 | INFO | [CONTRALOR] 🕵️ Sincronizando cantidad f90068e8: Local=36.80 vs Real=73.90
+2025-12-15 14:36:19,962 | INFO | [CONTRALOR] 🕵️ Sincronizando cantidad 92214f00: Local=37.10 vs Real=73.90
+2025-12-15 14:56:53,670 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 14:57:55,334 | INFO | [ORDER_MANAGER] ✂️ Cierre Parcial: 18.5
+2025-12-15 14:57:56,770 | INFO | [CONTRALOR] 🛡️ BE post-TP Dinámico -> Nuevo SL: 179.76
+2025-12-15 14:58:03,834 | INFO | [CONTRALOR] 🕵️ Sincronizando cantidad f90068e8: Local=73.90 vs Real=55.40
+2025-12-15 15:02:24,870 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 15:04:08,790 | INFO | [ORDER_MANAGER] ✂️ Cierre Parcial: 13.8
+2025-12-15 15:04:09,371 | INFO | [CONTRALOR] 🛡️ BE post-TP Dinámico -> Nuevo SL: 181.17
+2025-12-15 15:04:14,015 | INFO | [CONTRALOR] 🕵️ Sincronizando cantidad 92214f00: Local=55.40 vs Real=41.60
+2025-12-15 15:16:37,458 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 16:40:17,852 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 12 zonas nuevas detectadas.
+2025-12-15 16:47:48,826 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error obteniendo posiciones: HTTPSConnectionPool(host='testnet.binancefuture.com', port=443): Max retries exceeded with url: /fapi/v3/positionRisk?symbol=AAVEUSDT&timestamp=1765831668815&signature=c0e68cba3cb44d6d3ed65c14207d0b0af0cd0cbf7c55b7c7e1cebcfb17269fe9 (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000001B8225DB9D0>: Failed to resolve 'testnet.binancefuture.com' ([Errno 11001] getaddrinfo failed)"))
+2025-12-15 16:48:26,354 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error obteniendo posiciones: HTTPSConnectionPool(host='testnet.binancefuture.com', port=443): Max retries exceeded with url: /fapi/v3/positionRisk?symbol=AAVEUSDT&timestamp=1765831706350&signature=3940dafaf48e000448bdbc8cd43636a44ede3b93f0107f65dca934675b3e2973 (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000001B8225D9950>: Failed to resolve 'testnet.binancefuture.com' ([Errno 11001] getaddrinfo failed)"))
+2025-12-15 16:49:05,765 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error obteniendo posiciones: HTTPSConnectionPool(host='testnet.binancefuture.com', port=443): Max retries exceeded with url: /fapi/v3/positionRisk?symbol=AAVEUSDT&timestamp=1765831745762&signature=612af39a76be2fe2bc62c448258399f38ecc630523b27146d09c50e5d9bab841 (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000001B8225DA5D0>: Failed to resolve 'testnet.binancefuture.com' ([Errno 11001] getaddrinfo failed)"))
+2025-12-15 16:50:06,221 | ERROR | [API_MANAGER] ❌ ADVERTENCIA: Error obteniendo posiciones: HTTPSConnectionPool(host='testnet.binancefuture.com', port=443): Max retries exceeded with url: /fapi/v3/positionRisk?symbol=AAVEUSDT&timestamp=1765831806208&signature=01230452fc6a49120aee8e4d6dd5c3a76582752c6b170372874cf0532b0b2475 (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000001B8225DA5D0>: Failed to resolve 'testnet.binancefuture.com' ([Errno 11001] getaddrinfo failed)"))
+2025-12-15 16:53:48,552 | INFO | [MAIN] Usuario solicitó detención.
+2025-12-15 16:54:05,043 | INFO | [MAIN] --- INICIANDO SECUENCIA DE ARRANQUE ---
+2025-12-15 16:54:05,044 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 16:54:08,703 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 16:54:09,003 | INFO | [CONTRALOR] ♻️ Memoria recuperada: f90068e8
+2025-12-15 16:54:09,004 | INFO | [CONTRALOR] ♻️ Memoria recuperada: 92214f00
+2025-12-15 16:54:09,006 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 16:54:12,053 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 16:54:31,270 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
+2025-12-15 16:54:31,278 | INFO | [MAIN] ✅ Sistema ONLINE.
+2025-12-15 16:54:33,117 | INFO | [TELEGRAM] 👂 Escuchando comandos...
+2025-12-15 16:59:30,303 | INFO | [MAIN] Usuario solicitó detención.
+2025-12-15 17:01:04,184 | INFO | [MAIN] --- INICIANDO SECUENCIA DE ARRANQUE ---
+2025-12-15 17:01:04,185 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 17:01:07,929 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 17:01:08,772 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 17:01:10,206 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 17:01:17,804 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 17:01:18,075 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
+2025-12-15 17:01:18,078 | INFO | [MAIN] ✅ Sistema ONLINE.
+2025-12-15 17:01:18,636 | INFO | [TELEGRAM] 👂 Escuchando comandos...
+2025-12-15 17:10:28,926 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 17:16:47,785 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 17:25:59,713 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 17:42:22,474 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 18:01:37,784 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 18:09:40,442 | INFO | [MAIN] Usuario solicitó detención.
+2025-12-15 18:14:14,922 | INFO | [MAIN] --- INICIANDO SECUENCIA DE ARRANQUE ---
+2025-12-15 18:14:14,923 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 18:14:17,634 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 18:14:17,912 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 18:14:19,288 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 18:14:28,272 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
+2025-12-15 18:14:28,274 | INFO | [MAIN] ✅ Sistema ONLINE.
+2025-12-15 18:14:29,101 | INFO | [TELEGRAM] 👂 Escuchando comandos...
+2025-12-15 18:25:45,129 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 18:40:59,691 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 19:00:40,346 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 2 zonas nuevas detectadas.
+2025-12-15 19:16:29,007 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 19:31:18,846 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 19:47:23,518 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 2 zonas nuevas detectadas.
+2025-12-15 20:01:56,639 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 2 zonas nuevas detectadas.
+2025-12-15 20:01:57,688 | INFO | [SHOOTER] 🎯 GAMMA PLAN: SHORT @ 192.39. Qty: 34.652 
+2025-12-15 20:01:57,689 | INFO | [MAIN] ⚡ Señal SCALPING_GAMMA confirmada. Ejecutando...
+2025-12-15 20:01:57,695 | INFO | [ORDER_MANAGER] 🔫 Iniciando ejecución: SCALPING_GAMMA (SHORT)
+2025-12-15 20:01:59,101 | INFO | [ORDER_MANAGER] ✅ Entrada Confirmada (ID: 73869508). Precio Base: 192.3902
+2025-12-15 20:01:59,404 | INFO | [ORDER_MANAGER] 🛡️ Stop Loss activado @ 195.28
+2025-12-15 20:02:00,127 | INFO | [ORDER_MANAGER] 💰 TP colocado @ 182.77 (Qty: 17.3)
+2025-12-15 20:02:00,129 | INFO | [AUDITORIA] 📝 Orden f13b47dc asentada en libros.
+2025-12-15 20:02:00,130 | INFO | [CONTRALOR] 🔒 Posición f13b47dc bajo custodia.
+2025-12-15 20:02:32,826 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.00%)
+2025-12-15 20:03:07,432 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.00%)
+2025-12-15 20:03:43,636 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.12%)
+2025-12-15 20:04:17,760 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.12%)
+2025-12-15 20:04:49,581 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.12%)
+2025-12-15 20:05:26,205 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.19%)
+2025-12-15 20:05:59,718 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.19%)
+2025-12-15 20:06:51,879 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.19%)
+2025-12-15 20:07:27,800 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.20%)
+2025-12-15 20:08:02,090 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.20%)
+2025-12-15 20:08:37,820 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.20%)
+2025-12-15 20:09:11,134 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.28%)
+2025-12-15 20:09:43,600 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.28%)
+2025-12-15 20:10:14,998 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.28%)
+2025-12-15 20:10:51,012 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.02%)
+2025-12-15 20:11:25,531 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.02%)
+2025-12-15 20:11:58,691 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.02%)
+2025-12-15 20:12:34,715 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.02%)
+2025-12-15 20:13:10,369 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.08%)
+2025-12-15 20:13:41,480 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.08%)
+2025-12-15 20:14:16,183 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.08%)
+2025-12-15 20:14:49,079 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.08%)
+2025-12-15 20:15:25,436 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.08%)
+2025-12-15 20:16:00,705 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.08%)
+2025-12-15 20:16:34,908 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 20:16:35,219 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.14%)
+2025-12-15 20:17:09,169 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.14%)
+2025-12-15 20:17:42,314 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.14%)
+2025-12-15 20:18:17,200 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.14%)
+2025-12-15 20:18:59,420 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.14%)
+2025-12-15 20:19:31,325 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.34%)
+2025-12-15 20:20:00,914 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.25%)
+2025-12-15 20:20:33,192 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.25%)
+2025-12-15 20:21:05,816 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.22%)
+2025-12-15 20:21:39,125 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.22%)
+2025-12-15 20:22:11,355 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.22%)
+2025-12-15 20:22:44,188 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.22%)
+2025-12-15 20:23:17,206 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.10%)
+2025-12-15 20:23:50,290 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.10%)
+2025-12-15 20:24:26,319 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.10%)
+2025-12-15 20:24:55,681 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.10%)
+2025-12-15 20:25:31,559 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.01%)
+2025-12-15 20:26:04,632 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.01%)
+2025-12-15 20:26:39,904 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.01%)
+2025-12-15 20:27:15,146 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.25%)
+2025-12-15 20:27:50,005 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.25%)
+2025-12-15 20:28:26,825 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.25%)
+2025-12-15 20:29:01,953 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.16%)
+2025-12-15 20:29:35,787 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.16%)
+2025-12-15 20:30:10,666 | INFO | [SHOOTER] ⛔ Señal rechazada: Duplicado de posición existente (0.16%)
+2025-12-15 20:30:43,797 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 20:35:48,964 | INFO | [MAIN] Usuario solicitó detención.
+2025-12-15 20:36:07,300 | INFO | [MAIN] --- INICIANDO SECUENCIA DE ARRANQUE ---
+2025-12-15 20:36:07,300 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 20:36:10,003 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 20:36:10,743 | INFO | [CONTRALOR] ♻️ Memoria recuperada: f13b47dc
+2025-12-15 20:36:10,744 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 20:36:12,990 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 20:36:19,457 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 20:36:19,734 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
+2025-12-15 20:36:19,736 | INFO | [MAIN] ✅ Sistema ONLINE.
+2025-12-15 20:36:20,270 | INFO | [TELEGRAM] 👂 Escuchando comandos...
+2025-12-15 20:36:41,647 | INFO | [MAIN] Usuario solicitó detención.
+2025-12-15 20:37:01,718 | INFO | [MAIN] --- INICIANDO SECUENCIA DE ARRANQUE ---
+2025-12-15 20:37:01,718 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 20:37:04,179 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 20:37:04,893 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-15 20:37:08,005 | INFO | [API_MANAGER] ✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).
+2025-12-15 20:37:14,819 | INFO | [TELEGRAM] 🚀 Servicio de mensajería iniciado en segundo plano.
+2025-12-15 20:37:14,821 | INFO | [MAIN] ✅ Sistema ONLINE.
+2025-12-15 20:37:15,334 | INFO | [TELEGRAM] 👂 Escuchando comandos...
+2025-12-15 20:56:21,945 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 21:16:27,493 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 21:41:21,952 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 22:01:29,180 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 2 zonas nuevas detectadas.
+2025-12-15 22:17:00,880 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 22:32:20,300 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 22:46:32,011 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 23:01:31,742 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 23:11:41,323 | INFO | [FVG_SCANNER] 🗺️ Mapas actualizados. 1 zonas nuevas detectadas.
+2025-12-15 23:20:48,179 | INFO | [MAIN] Usuario solicitó detención.
