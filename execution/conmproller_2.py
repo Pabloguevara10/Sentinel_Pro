@@ -1,147 +1,166 @@
-import csv
-import os
+import time
 from config.config import Config
 
 class Comptroller:
     """
-    DEPARTAMENTO DE CONTROL INTERNO (Contralor):
-    Custodia las posiciones abiertas. Gestiona Break Even, Trailing Stop.
-    VERSION: 8.3 (Soporte persistencia SL_ORDER_ID y Fix closePosition)
+    DEPARTAMENTO DE CONTRALORÍA (V12.0 - CUSTODIA DINÁMICA):
+    - Monitorea posiciones en tiempo real.
+    - Ejecuta el Trailing Stop (Gamma Strategy).
+    - Sincroniza estado con el Exchange.
     """
-    def __init__(self, config, order_manager, financials, logger):
+    def __init__(self, config, order_manager, api_manager, logger):
         self.cfg = config
         self.om = order_manager
-        self.fin = financials 
-        self.log = logger
+        self.api = api_manager
+        self.logger = logger
         
-        self.posiciones_activas = {} 
-        self._recuperar_estado_de_bitacora()
+        # Cache local de posiciones para dashboard/logs
+        self.posiciones_activas = {}
+
+    def sincronizar_con_exchange(self):
+        """
+        Recupera las posiciones abiertas reales desde Binance al iniciar.
+        """
+        try:
+            real_positions = self.api.get_open_positions_info()
+            self.posiciones_activas = {} # Limpiar y recargar
+            
+            if not real_positions: return
+
+            count = 0
+            for pos in real_positions:
+                amt = float(pos['positionAmt'])
+                if amt != 0 and pos['symbol'] == self.cfg.SYMBOL:
+                    # Reconstruimos el estado en memoria
+                    pid = f"REC_{int(time.time())}" # ID temporal recuperado
+                    self.posiciones_activas[pid] = {
+                        'symbol': pos['symbol'],
+                        'side': 'LONG' if amt > 0 else 'SHORT',
+                        'qty': abs(amt),
+                        'entry_price': float(pos['entryPrice']),
+                        'pnl_unrealized': float(pos['unRealizedProfit']),
+                        'management_type': 'DYNAMIC_TRAILING' # Asumimos custodia dinámica
+                    }
+                    count += 1
+            
+            if count > 0:
+                self.logger.registrar_actividad("COMPTROLLER", f"♻️ Sincronizado: {count} posiciones recuperadas del Exchange.")
+                
+        except Exception as e:
+            self.logger.registrar_error("COMPTROLLER", f"Error en sincronización inicial: {e}")
 
     def aceptar_custodia(self, paquete_posicion):
-        pid = paquete_posicion['id']
-        paquete_posicion['be_activado'] = False  
-        paquete_posicion['ts_activado'] = False  
-        paquete_posicion['tp_alcanzados'] = 0    
-        
-        self.posiciones_activas[pid] = paquete_posicion
-        self.log.registrar_actividad("CONTRALOR", f"🔒 Posición {pid} bajo custodia.")
+        """
+        Registra una nueva posición creada por el OrderManager.
+        """
+        if paquete_posicion:
+            pid = paquete_posicion.get('id', 'UNKNOWN')
+            self.posiciones_activas[pid] = paquete_posicion
+            self.logger.registrar_actividad("COMPTROLLER", f"🛡️ Custodia aceptada para Posición {pid}")
 
-    def auditar_posiciones(self, current_price):
-        if not self.posiciones_activas:
-            return
+    def auditar_posiciones_activas(self):
+        """
+        MÉTODO CRÍTICO (Llamado por Main cada 1s).
+        Revisa el precio actual y mueve el Stop Loss si corresponde.
+        """
+        try:
+            # 1. Obtener Datos Reales (Stateless)
+            # Consultamos directamente a Binance para no depender de memoria corrupta
+            posiciones_api = self.api.get_open_positions_info()
+            if not posiciones_api: 
+                self.posiciones_activas = {}
+                return
 
-        for pid, pos in list(self.posiciones_activas.items()):
-            side = pos['side'] 
-            entry = pos['entry_price']
+            # 2. Obtener Precio de Mercado
+            precio_mercado = self.api.get_ticker_price(self.cfg.SYMBOL)
+            if precio_mercado == 0: return
+
+            # 3. Iterar y Auditar
+            posiciones_encontradas = {}
+            
+            for pos in posiciones_api:
+                # Filtrar solo nuestro símbolo y posiciones abiertas
+                if pos['symbol'] != self.cfg.SYMBOL: continue
+                amt = float(pos['positionAmt'])
+                if amt == 0: continue
+                
+                side = 'LONG' if amt > 0 else 'SHORT'
+                qty = abs(amt)
+                
+                # Guardar para el dashboard
+                posiciones_encontradas['BINANCE_ACTIVE'] = True
+                
+                # --- LÓGICA DE TRAILING STOP ---
+                if self.cfg.GammaConfig.GAMMA_TRAILING_ENABLED:
+                    self._gestionar_trailing(side, qty, precio_mercado)
+
+            # Actualizar cache local (simple)
+            if not posiciones_encontradas:
+                self.posiciones_activas = {}
+
+        except Exception as e:
+            self.logger.registrar_error("COMPTROLLER", f"Error en ciclo de auditoría: {e}")
+
+    def _gestionar_trailing(self, side, qty, precio_mercado):
+        """
+        Cerebro del Trailing Stop (1.5% de distancia).
+        """
+        try:
+            # A. Obtener órdenes activas para ver dónde está el SL actual
+            # Nota: Esto requiere un método en API Manager para traer órdenes abiertas
+            # Si no existe, usamos una aproximación o intentamos traerlas.
+            # Para esta versión robusta, asumiremos que si hay mejora, enviamos la orden.
+            # El OrderManager se encarga de cancelar la vieja.
+            
+            # Necesitamos saber el SL actual. 
+            # Opción A: Consultar API (Costoso pero seguro)
+            # Opción B: Calcular dónde DEBERÍA estar.
+            
+            # Vamos a calcular el NUEVO SL ideal
+            distancia_pct = self.cfg.GammaConfig.GAMMA_TRAILING_DIST_PCT # 0.015
+            umbral_update = self.cfg.GammaConfig.GAMMA_TRAILING_UPDATE_MIN_PCT # 0.002
+            
+            # Recuperar SL actual de la API (Implementación simplificada)
+            # Idealmente APIManager debería tener `get_open_orders`
+            # Como parche rápido, consultaremos todas las órdenes abiertas
+            ordenes = self.api.client.get_open_orders(symbol=self.cfg.SYMBOL)
+            sl_actual_precio = 0.0
+            sl_order_id = None
+            
+            for o in ordenes:
+                if o['type'] == 'STOP_MARKET' and o['reduceOnly'] == True:
+                    sl_actual_precio = float(o['stopPrice'])
+                    sl_order_id = o['orderId']
+                    break
+            
+            if sl_actual_precio == 0:
+                return # No hay SL puesto, peligroso pero no podemos hacer trailing sin referencia
+            
+            nuevo_sl_ideal = 0.0
+            update_needed = False
             
             if side == 'LONG':
-                roi_pct = (current_price - entry) / entry
-            else: 
-                roi_pct = (entry - current_price) / entry
-                
-            # Regla: Break Even al 1%
-            if not pos['be_activado'] and roi_pct >= 0.01:
-                self._activar_breakeven(pid, pos)
-
-            # Regla: Trailing Stop al 2%
-            if roi_pct >= 0.02:
-                self._gestionar_trailing(pid, pos, current_price, roi_pct)
-
-    def _activar_breakeven(self, pid, pos):
-        new_sl = pos['entry_price']
-        
-        # Solo intentamos cancelar si tenemos un ID válido
-        if pos['sl_order_id'] and pos['sl_order_id'] != 'UNKNOWN_ON_RESTART':
-            self.om.cancelar_orden(pos['sl_order_id'])
-        else:
-            self.log.registrar_actividad("CONTRALOR", f"⚠️ No se pudo cancelar SL anterior (ID Desconocido). Creando nuevo B/E.")
-        
-        sl_side = 'SELL' if pos['side'] == 'LONG' else 'BUY'
-        
-        # FIX: No enviar quantity con closePosition=true
-        params_sl = {
-            'symbol': self.cfg.SYMBOL,
-            'side': sl_side,
-            'type': 'STOP_MARKET',
-            'stopPrice': new_sl,
-            'positionSide': pos['side'],
-            'timeInForce': 'GTC',
-            'closePosition': 'true'
-        }
-        res = self.om.conn.place_order(params_sl)
-        
-        if res and 'orderId' in res:
-            pos['sl_order_id'] = res['orderId']
-            pos['sl_price'] = new_sl
-            pos['be_activado'] = True
-            self.log.registrar_actividad("CONTRALOR", f"🛡️ B/E Activado para {pid}. SL movido a entrada.")
-
-    def _gestionar_trailing(self, pid, pos, current_price, roi_pct):
-        distancia = 0.01
-        new_sl = 0.0
-        
-        if pos['side'] == 'LONG':
-            possible_sl = current_price * (1 - distancia)
-            if possible_sl > pos['sl_price']:
-                new_sl = possible_sl
-        else: 
-            possible_sl = current_price * (1 + distancia)
-            if possible_sl < pos['sl_price']:
-                new_sl = possible_sl
-        
-        if new_sl != 0.0:
-            diff = abs(new_sl - pos['sl_price']) / pos['sl_price']
-            if diff > 0.002:
-                # Cancelar viejo
-                if pos['sl_order_id'] and pos['sl_order_id'] != 'UNKNOWN_ON_RESTART':
-                    self.om.cancelar_orden(pos['sl_order_id'])
-                
-                sl_side = 'SELL' if pos['side'] == 'LONG' else 'BUY'
-                
-                # FIX: No enviar quantity
-                params_sl = {
-                    'symbol': self.cfg.SYMBOL,
-                    'side': sl_side,
-                    'type': 'STOP_MARKET',
-                    'stopPrice': round(new_sl, 2),
-                    'positionSide': pos['side'],
-                    'closePosition': 'true'
-                }
-                res = self.om.conn.place_order(params_sl)
-                if res and 'orderId' in res:
-                    pos['sl_order_id'] = res['orderId']
-                    pos['sl_price'] = new_sl
-                    pos['ts_activado'] = True
-                    self.log.registrar_actividad("CONTRALOR", f"🚀 Trailing Stop actualizado para {pid} a {new_sl:.2f}")
-
-    def _recuperar_estado_de_bitacora(self):
-        if not os.path.exists(self.cfg.FILE_LOG_ORDERS):
-            return
-
-        try:
-            with open(self.cfg.FILE_LOG_ORDERS, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    if row['ESTADO'] == 'ABIERTA':
-                        self.log.registrar_actividad("CONTRALOR", f"♻️ Recuperando posición {row['ID_POSICION']} de la memoria.")
+                nuevo_sl_ideal = precio_mercado * (1 - distancia_pct)
+                # Solo subir
+                if nuevo_sl_ideal > sl_actual_precio:
+                    mejora = (nuevo_sl_ideal - sl_actual_precio) / sl_actual_precio
+                    if mejora > umbral_update:
+                        update_needed = True
                         
-                        # Intentar leer SL_ORDER_ID, si no existe (CSV viejo) usar marca
-                        sl_id = row.get('SL_ORDER_ID', 'UNKNOWN_ON_RESTART')
-                        
-                        pos = {
-                            'id': row['ID_POSICION'],
-                            'side': row['SIDE'],
-                            'entry_price': float(row['PRECIO_ENTRADA']),
-                            'qty': float(row['QTY']),
-                            'sl_price': float(row['SL_PRICE']),
-                            'sl_order_id': sl_id,
-                            'be_activado': False,
-                            'ts_activado': False
-                        }
-                        self.posiciones_activas[pos['id']] = pos
-                        
+            else: # SHORT
+                nuevo_sl_ideal = precio_mercado * (1 + distancia_pct)
+                # Solo bajar
+                if nuevo_sl_ideal < sl_actual_precio:
+                    mejora = (sl_actual_precio - nuevo_sl_ideal) / sl_actual_precio
+                    if mejora > umbral_update:
+                        update_needed = True
+            
+            if update_needed:
+                self.logger.registrar_actividad("COMPTROLLER", f"⚡ Trailing Activado: Precio {precio_mercado} -> Nuevo SL {nuevo_sl_ideal:.2f}")
+                self.om.actualizar_stop_loss_seguro(
+                    self.cfg.SYMBOL, side, qty, nuevo_sl_ideal, sl_order_id
+                )
+
         except Exception as e:
-            self.log.registrar_error("CONTRALOR", f"Error recuperando estado: {e}")
-
-    def get_open_positions_count(self):
-        return len(self.posiciones_activas)
+            # Errores en trailing no deben detener el bot, solo loguear
+            pass

@@ -1,58 +1,66 @@
 import pandas as pd
-import numpy as np
+import pandas_ta as ta 
 
 class Calculator:
     """
-    DEPARTAMENTO DE INVESTIGACIÓN (Área Matemática):
-    Calcula indicadores técnicos.
-    VERSION: ALFA1 (Agregado OBV y Pivotes Diarios)
+    CALCULADORA CIENTÍFICA (V12.2 - PANDAS 2.0 COMPATIBLE):
+    - Convierte 1m -> Temporalidades Superiores.
+    - Calcula Indicadores Técnicos sin warnings de depreciación.
     """
     
     @staticmethod
-    def calcular_indicadores(df):
-        if df is None or df.empty: return df
+    def resample_data(df_1m, timeframe):
+        """
+        Toma el DataFrame de 1m (con índice datetime) y lo convierte al TF destino.
+        """
+        # Mapeo de string '15m', '1h' a reglas de Pandas
+        # CORRECCIÓN: Usamos 'h' minúscula en lugar de 'H' (Pandas 2.2+)
+        rule_map = {
+            '3m': '3min', '5m': '5min', '15m': '15min', '30m': '30min',
+            '1h': '1h', '4h': '4h', '1d': '1D'
+        }
+        
+        rule = rule_map.get(timeframe)
+        if not rule: return None
+        
+        # Lógica de Agregación OHLCV
+        agg_dict = {
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last',
+            'volume': 'sum',
+            'timestamp': 'first' # Mantenemos el timestamp de apertura
+        }
+        
+        try:
+            df_resampled = df_1m.resample(rule).agg(agg_dict).dropna()
+            return df_resampled
+        except Exception:
+            return None
+
+    @staticmethod
+    def agregar_indicadores(df):
+        """
+        Agrega los indicadores técnicos básicos al DataFrame.
+        """
         df = df.copy()
         
-        # Casting
-        for c in ['open', 'high', 'low', 'close', 'volume']:
-            df[c] = df[c].astype(float)
-
-        # 1. OBV (On-Balance Volume) - NUEVO
-        # Si el cierre es mayor al anterior, suma volumen. Si es menor, resta.
-        df['obv'] = (np.sign(df['close'].diff()) * df['volume']).fillna(0).cumsum()
-
-        # 2. EMAs
+        # RSI (14)
+        delta = df['close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        df['rsi'] = 100 - (100 / (1 + rs))
+        
+        # EMAs (9, 21, 50, 200)
         df['ema_9'] = df['close'].ewm(span=9, adjust=False).mean()
-        df['ema_20'] = df['close'].ewm(span=20, adjust=False).mean()
+        df['ema_21'] = df['close'].ewm(span=21, adjust=False).mean()
         df['ema_50'] = df['close'].ewm(span=50, adjust=False).mean()
         df['ema_200'] = df['close'].ewm(span=200, adjust=False).mean()
         
-        # 3. RSI
-        delta = df['close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-        rs = gain / loss
-        df['rsi'] = 100 - (100 / (1 + rs))
-
-        # 4. Bollinger Bands
-        sma = df['close'].rolling(20).mean()
-        std = df['close'].rolling(20).std()
-        df['bb_upper'] = sma + (std * 2)
-        df['bb_middle'] = sma
-        df['bb_lower'] = sma - (std * 2)
-
-        # 5. ATR (Volatilidad para Stop Loss)
-        high_low = df['high'] - df['low']
-        high_close = np.abs(df['high'] - df['close'].shift())
-        low_close = np.abs(df['low'] - df['close'].shift())
-        ranges = pd.concat([high_low, high_close, low_close], axis=1)
-        true_range = np.max(ranges, axis=1)
-        df['atr'] = true_range.rolling(14).mean()
-
-        # 6. Pivotes Diarios (Rolling 24h aproximado para intradía)
-        # Nota: Para precisión exacta del PDH/PDL usamos el timeframe '1d' en el scanner
-        # Aquí dejamos una referencia rolling para el corto plazo
-        df['rolling_24h_high'] = df['high'].rolling(1440).max() # 1440 mins en un día (si es data 1m)
-        df['rolling_24h_low'] = df['low'].rolling(1440).min()
-
+        # Rellena NaN iniciales para no romper el scanner
+        # CORRECCIÓN: Usamos bfill() directo en lugar de fillna(method='bfill')
+        df.bfill(inplace=True)
+        
         return df

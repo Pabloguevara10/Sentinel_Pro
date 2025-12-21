@@ -1,197 +1,211 @@
 import time
 import sys
 import os
-import pandas as pd
 
+# --- IMPORTACIONES ---
 from config.config import Config
 from logs.system_logger import SystemLogger
 from connections.api_manager import APIManager
 from execution.order_manager import OrderManager
 from execution.comptroller import Comptroller
-from core.financials import Financials
 from logic.brain import Brain
 from logic.shooter import Shooter
+from data.historical_manager import HistoricalManager
+
+# --- INTERFACES ---
 from interfaces.dashboard import Dashboard
 from interfaces.telegram_bot import TelegramBot
-from interfaces.human_input import HumanInput
 
-# HERRAMIENTAS DE DATOS
-from tools.data_seeder import DataSeeder
-from tools.fvg_scanner import FVGScanner
+class SentinelBot:
+    """
+    NÚCLEO CENTRAL (V12.6 - FIX INTERFACES):
+    - Telegram: Inyección de dependencias corregida.
+    - Dashboard: Mapeo de claves corregido ('volumen', 'binance').
+    """
+    def __init__(self):
+        # 1. Inicialización de Infraestructura
+        Config.inicializar_infraestructura()
+        
+        self.logger = SystemLogger()
+        self.logger.registrar_actividad("MAIN", f"🤖 INICIANDO {Config.BOT_NAME}...")
 
-class BotSupervisor:
-    def __init__(self, logger, max_errors=50):
-        self.log = logger
-        self.error_count = 0
-        self.max_errors = max_errors
-
-    def reportar_error(self, e, modulo="MAIN"):
-        self.error_count += 1
-        self.log.registrar_error(modulo, f"Error #{self.error_count}: {str(e)}")
-        if self.error_count > self.max_errors:
-            self.log.registrar_error("SUPERVISOR", "Límite de errores excedido. Apagado.", critico=True)
+        # 2. Inicialización de Capa de Ejecución
+        try:
+            self.api = APIManager(self.logger)
+            self.order_manager = OrderManager(Config, self.api, self.logger)
+            # El Contralor necesita OrderManager y API
+            self.comptroller = Comptroller(Config, self.order_manager, self.api, self.logger)
+        except Exception as e:
+            self.logger.registrar_error("MAIN", f"Fallo en Capa de Ejecución: {e}", critico=True)
             sys.exit(1)
 
-    def reportar_exito(self):
-        if self.error_count > 0: self.error_count = 0
-
-def actualizar_cache_datos(cfg):
-    """Recarga los DataFrames frescos del disco a la RAM para el Cerebro."""
-    cache = {}
-    timeframes = ['5m', '15m', '1h'] # TFs críticos para el Brain
-    for tf in timeframes:
-        path = os.path.join(cfg.DIR_DATA, f"{cfg.SYMBOL}_{tf}.csv")
-        if os.path.exists(path):
-            try:
-                df = pd.read_csv(path)
-                cache[tf] = df
-            except: pass
-    return cache
-
-def main():
-    print(f"\n🤖 INICIANDO {Config.BOT_NAME} (V11.7 - FULL REAL TIME)...")
-    Config.inicializar_infraestructura()
-    
-    log = SystemLogger()
-    log.registrar_actividad("MAIN", "--- INICIANDO SECUENCIA DE ARRANQUE ---")
-    supervisor = BotSupervisor(log)
-
-    try:
-        # 1. INFRAESTRUCTURA
-        conn = APIManager(log)
-        fin = Financials(Config, conn) 
-        om = OrderManager(Config, conn, log)
-        comp = Comptroller(Config, om, fin, log)
+        # 3. Inicialización de Capa Lógica y Datos
+        self.data_miner = HistoricalManager(self.api, self.logger)
+        self.brain = Brain(Config)
         
-        # 2. GESTIÓN DE DATOS (Arranque)
-        seeder = DataSeeder()     # Sembrador (Descarga/Genera Velas)
-        scanner = FVGScanner()    # Escáner (Genera Mapas)
-        
-        print("⏳ Sincronizando datos y mapas...")
-        seeder.sembrar_datos()    # Actualiza velas 1m -> 5m, 15m...
-        scanner.escanear_todo()   # Actualiza mapas FVG
-        
-        # Carga inicial a memoria
-        dfs_cache = actualizar_cache_datos(Config)
-        
-        # 3. INTELIGENCIA
-        brain = Brain(Config)
-        shooter = Shooter(Config, log, fin)
-        
-        # 4. INTERFACES
-        dash = Dashboard()
-        tele = TelegramBot(Config, shooter, comp, om, log, fin)
-        tele.iniciar()
-
-        human = HumanInput(tele, comp, om, shooter, log)
-        human.iniciar()
-
-        log.registrar_actividad("MAIN", "✅ Sistema ONLINE.")
-        print("✅ Sistema ONLINE. Entrando en bucle de control...")
-        time.sleep(1)
-
-    except Exception as e:
-        print(f"❌ Error Crítico al inicio: {e}")
-        log.registrar_error("MAIN", f"Fallo en arranque: {e}", critico=True)
-        sys.exit(1)
-
-    # --- BUCLE PRINCIPAL ---
-    cycle_counter = 0
-    market_state_cache = {'rsi_15m': 50.0, 'rsi_5m': 50.0}
-    
-    dashboard_data = {
-        'price': 0.0,
-        'financials': {'balance': 0.0, 'daily_pnl': 0.0},
-        'market': {'symbol': Config.SYMBOL, 'rsi': 0.0, 'volumen': 0.0},
-        'connections': {'binance': True, 'telegram': True},
-        'positions': []
-    }
-
-    try:
-        while True:
-            # ============================================================
-            # TAREA 1: LATIDO RÁPIDO (Cada 1 seg) - Precios y Gestión
-            # ============================================================
-            try:
-                current_price = conn.get_ticker_price(Config.SYMBOL)
-                dashboard_data['price'] = current_price
-                
-                if current_price > 0:
-                    comp.auditar_posiciones(current_price, rsi_15m=market_state_cache['rsi_15m'])
-                
-                dashboard_data['financials']['balance'] = fin.get_balance_total()
-                dashboard_data['financials']['daily_pnl'] = fin.get_daily_pnl()
-
-            except Exception as e:
-                supervisor.reportar_error(e, "LOOP_FAST")
-
-            # ============================================================
-            # TAREA 2: LÓGICA PESADA & ACTUALIZACIÓN (Cada 10 seg)
-            # ============================================================
-            if cycle_counter % Config.CYCLE_SLOW == 0:
-                try:
-                    # A. Sincronización con Binance (Posiciones reales)
-                    comp.sincronizar_con_exchange()
-                    
-                    # B. ACTUALIZACIÓN DE DATOS (Minuto a Minuto)
-                    # 1. Sembrar: Descarga 1m faltante y regenera 5m/15m en disco
-                    seeder.sembrar_datos() 
-                    
-                    # 2. Escanear: Busca nuevos FVGs en la data fresca
-                    scanner.escanear_todo()
-                    
-                    # 3. Recargar: Sube los datos frescos del disco a la RAM del Brain
-                    dfs_cache = actualizar_cache_datos(Config)
-                    
-                    # C. Actualizar Datos Visuales (Dashboard)
-                    if '5m' in dfs_cache and not dfs_cache['5m'].empty:
-                        last_5m = dfs_cache['5m'].iloc[-1]
-                        market_state_cache['rsi_5m'] = last_5m.get('rsi', 50.0)
-                        dashboard_data['market']['rsi'] = market_state_cache['rsi_5m']
-                        dashboard_data['market']['volumen'] = last_5m.get('volume', 0.0)
-                    
-                    if '15m' in dfs_cache and not dfs_cache['15m'].empty:
-                        market_state_cache['rsi_15m'] = dfs_cache['15m'].iloc[-1].get('rsi', 50.0)
-
-                    # D. ANÁLISIS ESTRATÉGICO
-                    signal = brain.analizar_mercado(dfs_cache)
-                    
-                    if signal:
-                        plan = shooter.validar_y_crear_plan(signal, comp.posiciones_activas)
-                        
-                        if plan:
-                            log.registrar_actividad("MAIN", f"⚡ Señal {plan['strategy']} confirmada. Ejecutando...")
-                            ok, paquete = om.ejecutar_estrategia(plan)
-                            
-                            if ok:
-                                comp.aceptar_custodia(paquete)
-                                msg = f"🚀 **ORDEN EJECUTADA ({plan['strategy']})**\nLado: {plan['side']}\nEntrada: ${plan['entry_price']}"
-                                tele.enviar_mensaje(msg)
-
-                except Exception as e:
-                    supervisor.reportar_error(e, "LOOP_SLOW")
-
-            # ============================================================
-            # TAREA 3: REPORTE VISUAL (Cada 3 seg)
-            # ============================================================
-            if cycle_counter % Config.CYCLE_DASH == 0:
-                try:
-                    dashboard_data['positions'] = list(comp.posiciones_activas.values())
-                    dash.render(dashboard_data)
-                except Exception as e:
-                    supervisor.reportar_error(e, "LOOP_DASH")
+        # 4. Puente Financiero (Necesario para Shooter y Telegram)
+        class FinancialsBridge:
+            def __init__(self, api_ref):
+                self.api = api_ref
             
-            supervisor.reportar_exito()
-            time.sleep(Config.CYCLE_FAST)
-            cycle_counter += 1
+            def get_balance_total(self):
+                try:
+                    acc = self.api.client.account()
+                    for asset in acc['assets']:
+                        if asset['asset'] == 'USDT':
+                            return float(asset['walletBalance'])
+                except:
+                    pass
+                return 0.0
+            
+            def get_daily_pnl(self):
+                return 0.0 # Implementar lógica real si se desea
 
-    except KeyboardInterrupt:
-        print("\n🛑 Apagado manual solicitado...")
-        log.registrar_actividad("MAIN", "Usuario solicitó detención.")
-        sys.exit(0)
-    except Exception as e:
-        supervisor.reportar_error(e, "CRITICAL_LOOP")
-        sys.exit(1)
+        self.fin_bridge = FinancialsBridge(self.api)
+        self.shooter = Shooter(Config, self.logger, self.fin_bridge)
+        
+        # 5. Inicialización de Interfaces
+        self.dashboard = Dashboard()
+        
+        # --- FIX TELEGRAM: Inyección correcta de dependencias ---
+        # TelegramBot pide: (config, shooter, comptroller, order_manager, logger, financials)
+        try:
+            self.telegram = TelegramBot(
+                Config, 
+                self.shooter, 
+                self.comptroller, 
+                self.order_manager, 
+                self.logger, 
+                self.fin_bridge
+            )
+            # Intentamos iniciar (esto lanza el hilo)
+            self.telegram.iniciar()
+            self.telegram_active = True
+        except Exception as e:
+            self.logger.registrar_error("MAIN", f"Telegram no pudo iniciar: {e}")
+            self.telegram = None
+            self.telegram_active = False
+
+    def inicializar_sistema(self):
+        self.logger.registrar_actividad("MAIN", "--- FASE DE SINCRONIZACIÓN INICIAL ---")
+        
+        # Sincronización de Datos
+        print("⏳ Sincronizando datos históricos...")
+        exito_datos = self.data_miner.sincronizar_infraestructura_datos()
+        
+        if not exito_datos:
+            self.logger.registrar_error("MAIN", "⛔ Fallo crítico en datos. Deteniendo.")
+            sys.exit(1)
+
+        # Sincronización de Contralor
+        self.comptroller.sincronizar_con_exchange()
+        
+        self.logger.registrar_actividad("MAIN", "✅ Sistema listo.")
+        
+        # Notificación Telegram
+        if self.telegram_active:
+            self.telegram.enviar_mensaje(f"🤖 **SENTINEL ONLINE**\n✅ Sistemas Operativos\n📊 Par: {Config.SYMBOL}")
+
+    def run(self):
+        self.inicializar_sistema()
+        self.logger.registrar_actividad("MAIN", "--- BUCLE PRINCIPAL ---")
+        
+        last_analysis = 0
+        last_sync = 0
+        last_dash = 0
+        
+        SYNC_INTERVAL = 60
+        DASH_INTERVAL = 3
+
+        try:
+            while True:
+                now = time.time()
+
+                # 1. DATA SYNC (60s)
+                if now - last_sync >= SYNC_INTERVAL:
+                    self.data_miner.sincronizar_infraestructura_datos()
+                    last_sync = now
+
+                # 2. AUDITORIA (1s)
+                self.comptroller.auditar_posiciones_activas()
+
+                # 3. DASHBOARD (3s)
+                if now - last_dash >= DASH_INTERVAL:
+                    self._actualizar_dashboard()
+                    last_dash = now
+                
+                # 4. ANALISIS (10s)
+                if now - last_analysis >= Config.CYCLE_SLOW:
+                    self._ciclo_analisis()
+                    last_analysis = now
+                
+                time.sleep(Config.CYCLE_FAST)
+                
+        except KeyboardInterrupt:
+            print("\n🛑 Apagando...")
+            sys.exit(0)
+        except Exception as e:
+            self.logger.registrar_error("MAIN", f"Error Loop: {e}", critico=True)
+
+    def _actualizar_dashboard(self):
+        try:
+            # Datos de Mercado
+            df_15m = self.data_miner.obtener_dataframe_cache('15m')
+            rsi = 0.0
+            vol = 0.0
+            
+            if not df_15m.empty:
+                last_row = df_15m.iloc[-1]
+                rsi = last_row.get('rsi', 0.0)
+                vol = last_row.get('volume', 0.0) # Aquí leemos 'volume' del DF
+            
+            # Datos Financieros y API
+            price = self.api.get_ticker_price(Config.SYMBOL)
+            balance = self.fin_bridge.get_balance_total()
+            
+            # --- FIX: MAPEO DE CLAVES PARA DASHBOARD.PY ---
+            dashboard_data = {
+                'price': price,
+                'financials': {
+                    'balance': balance,
+                    'daily_pnl': 0.0 
+                },
+                'market': {
+                    'symbol': Config.SYMBOL,
+                    'rsi': rsi,
+                    'volumen': vol  # <--- FIX: Clave renombrada a 'volumen'
+                },
+                'connections': {
+                    'binance': (price > 0),    # <--- FIX: Clave renombrada a 'binance'
+                    'telegram': self.telegram_active
+                },
+                'positions': list(self.comptroller.posiciones_activas.values())
+            }
+            
+            self.dashboard.render(dashboard_data)
+
+        except Exception:
+            pass
+
+    def _ciclo_analisis(self):
+        df_15m = self.data_miner.obtener_dataframe_cache('15m')
+        if df_15m.empty: return
+
+        cache = {'15m': df_15m}
+        senal = self.brain.analizar_mercado(cache)
+        
+        if senal:
+            posiciones = self.comptroller.posiciones_activas
+            plan = self.shooter.validar_y_crear_plan(senal, posiciones)
+            
+            if plan:
+                exito, paquete = self.order_manager.ejecutar_estrategia(plan)
+                if exito and paquete:
+                    self.comptroller.aceptar_custodia(paquete)
+                    if self.telegram_active:
+                        msg = f"🚀 **ORDEN EJECUTADA**\n{plan['side']} @ ${plan['entry_price']}"
+                        self.telegram.enviar_mensaje(msg)
 
 if __name__ == "__main__":
-    main()
+    bot = SentinelBot()
+    bot.run()

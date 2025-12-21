@@ -1,12 +1,13 @@
 import uuid
 import time
-from config.config import Config
+from binance.error import ClientError
 
 class OrderManager:
     """
-    DEPARTAMENTO DE OPERACIONES (Ejecución V11.7 - BUGFIXED):
-    - Corrección: Usa 'query_order' en lugar de 'get_order' para polling.
-    - Espera activamente a que la orden de entrada se llene antes de poner SL.
+    DEPARTAMENTO DE OPERACIONES (Ejecución V12.0 - REFINADO):
+    - Ejecuta órdenes de entrada con polling robusto.
+    - Coloca protecciones iniciales (SL y Hard TP).
+    - Gestiona actualizaciones seguras de SL (Protocolo Overlap).
     """
     def __init__(self, config, api_conn, logger):
         self.cfg = config
@@ -35,6 +36,7 @@ class OrderManager:
             'positionSide': plan['side']
         }
 
+        # Usamos el conector directo para place_order
         res_entry = self.conn.place_order(params_entry)
         
         if not res_entry or 'orderId' not in res_entry:
@@ -45,43 +47,40 @@ class OrderManager:
         pos_id = str(uuid.uuid4())[:8]
 
         # 2. BUCLE DE CONFIRMACIÓN INSISTENTE (Wait for FILL)
-        # Corrección: query_order es el método correcto en binance-connector
         filled = False
         intentos = 0
-        max_intentos = 5 # Esperar hasta 2.5 segundos (5 * 0.5s)
+        max_intentos = 5 # Esperar hasta 2.5 segundos
         real_entry_price = 0.0
         
         while intentos < max_intentos:
             try:
-                # CORRECCIÓN AQUÍ: Usamos query_order
+                # Polling directo al cliente de binance
                 order_status = self.conn.client.query_order(symbol=self.cfg.SYMBOL, orderId=entry_order_id)
                 status = order_status.get('status', 'UNKNOWN')
                 
                 if status in ['FILLED', 'PARTIALLY_FILLED']:
                     filled = True
                     real_entry_price = float(order_status.get('avgPrice', 0.0))
-                    # Si avgPrice es 0 (raro en market), usamos ticker price
                     if real_entry_price == 0: 
                         real_entry_price = self.conn.get_ticker_price(self.cfg.SYMBOL)
                     break
                 
             except Exception as e:
-                # Logueamos como advertencia leve para no ensuciar si es solo latencia
                 self.log.registrar_error("ORDER_MANAGER", f"Polling leve orden {entry_order_id}: {e}")
             
             time.sleep(0.5)
             intentos += 1
         
         if not filled:
-            # Si tras 2.5s no se llenó, asumimos éxito parcial o usamos precio ticker
             self.log.registrar_actividad("ORDER_MANAGER", "⚠️ Orden enviada pero no confirmada FILLED a tiempo. Asumiendo ejecución.")
             real_entry_price = self.conn.get_ticker_price(self.cfg.SYMBOL)
 
         self.log.registrar_actividad("ORDER_MANAGER", f"✅ Entrada Confirmada (ID: {entry_order_id}). Precio Base: {real_entry_price}")
 
-        # 3. COLOCACIÓN DE STOP LOSS
-        sl_price = self._redondear_precio(plan['sl_price'])
+        # 3. COLOCACIÓN DE PROTECCIONES (SL y HARD TP)
         
+        # A. STOP LOSS
+        sl_price = self._redondear_precio(plan['sl_price'])
         params_sl = {
             'symbol': self.cfg.SYMBOL,
             'side': api_side_exit,
@@ -103,14 +102,34 @@ class OrderManager:
             self.cerrar_posicion_mercado(plan['side'], qty_final)
             return False, None
 
-        # 4. TAKE PROFITS
+        # B. HARD TAKE PROFIT (Si aplica)
+        tp_hard_price = plan.get('tp_hard_price', 0.0)
+        tp_hard_id = None
+        
+        if tp_hard_price > 0:
+            tp_price = self._redondear_precio(tp_hard_price)
+            params_tp = {
+                'symbol': self.cfg.SYMBOL,
+                'side': api_side_exit,
+                'type': 'TAKE_PROFIT_MARKET',
+                'stopPrice': tp_price,
+                'positionSide': plan['side'],
+                'timeInForce': 'GTC',
+                'closePosition': 'true'
+            }
+            res_tp = self.conn.place_order(params_tp)
+            if res_tp and 'orderId' in res_tp:
+                tp_hard_id = res_tp['orderId']
+                self.log.registrar_actividad("ORDER_MANAGER", f"🚀 Hard TP activado @ {tp_price}")
+
+        # C. TPs Parciales (Sniper Legacy)
         tps_ids = []
-        if 'tps' in plan:
+        if 'tps' in plan and plan['tps']:
             for tp in plan['tps']:
                 tp_qty = self._redondear_cantidad(tp['qty'])
                 tp_price = self._redondear_precio(tp['price'])
                 
-                params_tp = {
+                params_tp_limit = {
                     'symbol': self.cfg.SYMBOL,
                     'side': api_side_exit, 
                     'type': 'LIMIT',
@@ -120,10 +139,10 @@ class OrderManager:
                     'timeInForce': 'GTC'
                 }
                 
-                res_tp = self.conn.place_order(params_tp)
-                if res_tp:
-                    tps_ids.append({'id': res_tp['orderId'], 'price': tp_price, 'qty': tp_qty})
-                    self.log.registrar_actividad("ORDER_MANAGER", f"💰 TP colocado @ {tp_price} (Qty: {tp_qty})")
+                res_tp_l = self.conn.place_order(params_tp_limit)
+                if res_tp_l:
+                    tps_ids.append({'id': res_tp_l['orderId'], 'price': tp_price, 'qty': tp_qty})
+                    self.log.registrar_actividad("ORDER_MANAGER", f"💰 TP Parcial colocado @ {tp_price}")
 
         # 5. REGISTRO
         paquete_posicion = {
@@ -135,12 +154,65 @@ class OrderManager:
             'qty': qty_final,
             'sl_price': sl_price,
             'sl_order_id': sl_order_id,
+            'tp_hard_price': tp_hard_price, # Nuevo campo
+            'tp_hard_order_id': tp_hard_id, # Nuevo campo
             'tps_config': tps_ids, 
+            'management_type': plan.get('management_type', 'STATIC'), # Para Contralor
             'status': 'OPEN'
         }
         
         self.log.registrar_orden(paquete_posicion)
         return True, paquete_posicion
+
+    def actualizar_stop_loss_seguro(self, symbol, side_posicion, qty, nuevo_precio, id_orden_antigua):
+        """
+        PROTOCOLO DE SEGURIDAD "OVERLAP" PARA TRAILING STOP:
+        1. Coloca el Nuevo SL.
+        2. Verifica que Binance confirmó y devolvió un ID válido.
+        3. Solo entonces, cancela el SL antiguo.
+        """
+        try:
+            # Determinar el lado de la orden de protección (Inverso a la posición)
+            side_sl = 'SELL' if side_posicion == 'LONG' else 'BUY'
+            precio_final = self._redondear_precio(nuevo_precio)
+            
+            # PASO 1: Colocar Nuevo SL (Sin tocar el viejo aún)
+            # self.log.registrar_actividad("ORDER_MANAGER", f"🛡️ Ajustando Trailing SL a {precio_final}...")
+            
+            # Construcción manual de params para usar place_order del conector
+            params = {
+                'symbol': symbol,
+                'side': side_sl,
+                'type': 'STOP_MARKET',
+                'stopPrice': precio_final,
+                'positionSide': side_posicion, # Binance Futures Hedge Mode requiere esto
+                'closePosition': 'true',
+                'timeInForce': 'GTC'
+            }
+            
+            res = self.conn.place_order(params)
+            
+            nuevo_id = None
+            if res and 'orderId' in res:
+                nuevo_id = res['orderId']
+            
+            if not nuevo_id:
+                self.log.registrar_error("ORDER_MANAGER", "❌ Binance no confirmó el nuevo SL. Abortando cambio. (SL Viejo mantenido)")
+                return False
+
+            # PASO 2: Eliminar Viejo SL (Ya estamos seguros con el nuevo)
+            try:
+                self.cancelar_orden(id_orden_antigua)
+                self.log.registrar_actividad("ORDER_MANAGER", f"✅ SL actualizado a {precio_final}. Protección asegurada.")
+            except Exception as e:
+                # Advertencia menor: Tenemos 2 SLs activos. Es redundante pero SEGURO.
+                self.log.registrar_error("ORDER_MANAGER", f"⚠️ Aviso: No se borró el SL viejo ({id_orden_antigua}). Revisar manual. Error: {e}")
+
+            return True
+
+        except Exception as e:
+            self.log.registrar_error("ORDER_MANAGER", f"⛔ Error Desconocido al mover SL: {e}")
+            return False
 
     def cancelar_orden(self, order_id):
         return self.conn.cancel_order(self.cfg.SYMBOL, order_id)

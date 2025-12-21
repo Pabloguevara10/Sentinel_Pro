@@ -1,76 +1,115 @@
+# =============================================================================
+# UBICACIÓN: config/config.py
+# DESCRIPCIÓN: Configuración Maestra V13.2 (Fix Nombres de Variables)
+# =============================================================================
+
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class Config:
-    """
-    GERENCIA CENTRAL: Define las reglas inmutables del ecosistema.
-    VERSION: 11.5 (Panel de Control de Estrategias)
-    """
-    # --- 1. IDENTIDAD Y CREDENCIALES ---
-    BOT_NAME = "SENTINEL PRO V11.5 (SWITCH PANEL)"
-    API_KEY = os.getenv('BINANCE_API_KEY', '')
-    API_SECRET = os.getenv('BINANCE_API_SECRET', '')
+    # ---------------------------------------------------------
+    # 1. IDENTIDAD Y SISTEMA
+    # ---------------------------------------------------------
+    BOT_NAME = "SENTINEL PRO (V13.2 DUAL CORE)"
+    VERSION = "13.2"
+    
+    CYCLE_FAST = 1   
+    CYCLE_DASH = 3   
+    CYCLE_SLOW = 10  
+    
+    # --- RUTAS DE SISTEMA (COMPATIBILIDAD TOTAL) ---
+    DATA_PATH = "data/historical"
+    LOGS_PATH = "logs"
+    
+    # FIX: Definimos ambas versiones (Singular y Plural) para evitar errores
+    FILE_LOG_ACTIVITY = os.path.join(LOGS_PATH, "activity.log")
+    FILE_LOG_ACTIVITIES = os.path.join(LOGS_PATH, "activity.log") 
+    
+    FILE_LOG_ERROR = os.path.join(LOGS_PATH, "error.log")
+    FILE_LOG_ERRORS = os.path.join(LOGS_PATH, "error.log") # <-- La que faltaba
+    
+    DB_FILE = os.path.join(DATA_PATH, "trading_history.db")
+    
+    # ---------------------------------------------------------
+    # 2. CREDENCIALES
+    # ---------------------------------------------------------
+    API_KEY = os.getenv("BINANCE_API_KEY", "")
+    API_SECRET = os.getenv("BINANCE_API_SECRET", "")
     TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', '')
     TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')
     
-    # --- 2. REGLAS OPERATIVAS ---
-    SYMBOL = 'AAVEUSDT'
-    LEVERAGE = 5
-    MARGIN_TYPE = 'ISOLATED' 
-    POSITION_MODE = 'HEDGE'  
-    MAX_DAILY_LOSS_PCT = 0.05
+    TESTNET = False  
     
-    # Ciclos de Reloj
-    CYCLE_FAST = 1
-    CYCLE_DASH = 3
-    CYCLE_SLOW = 10
+    # ---------------------------------------------------------
+    # 3. MERCADO
+    # ---------------------------------------------------------
+    SYMBOL = "AAVEUSDT"
+    TIMEFRAMES = ["15m", "1h", "4h", "1d"] 
+    LIMIT_CANDLES = 1000
 
-    # --- 3. CONTROL DE ESTRATEGIAS (INTERRUPTORES) ---
-    # Configura True/False para activar/desactivar lógicas sin borrar código.
-    ENABLE_STRATEGY_SNIPER = False  # <--- DORMIDO (Modo Hibernación)
-    ENABLE_STRATEGY_GAMMA = True    # <--- ACTIVO (Modo Operativo)
-
-    # --- 4. PERFIL ESTRATÉGICO (SNIPER V11) ---
-    class SniperConfig:
-        RISK_PER_TRADE = 0.05    # 5% Riesgo por operación
-        STOP_LOSS_PCT = 0.05     # 5% Distancia de SL
-        
-        # Plan de Salida Escalonada (TPs)
-        TP_PLAN = [
-            {'dist': 0.06, 'qty_pct': 0.30, 'move_sl': 'BE'},  # TP1: 6%
-            {'dist': 0.09, 'qty_pct': 0.40, 'move_sl': 'TP1'}, # TP2: 9%
-            {'dist': 0.12, 'qty_pct': 0.30, 'move_sl': 'NONE'} # TP3: 12%
-        ]
-
-    # --- 5. PERFIL ESTRATÉGICO (GAMMA SCALPING) ---
+    # ---------------------------------------------------------
+    # 4. GESTIÓN DE RIESGO
+    # ---------------------------------------------------------
+    MAX_RISK_SLOTS = 3       
+    MAX_GAMMA_SLOTS = 2      
+    MAX_SWING_SLOTS = 2      
+    
+    # ---------------------------------------------------------
+    # 5. ESTRATEGIA GAMMA V7 (SCALPING)
+    # ---------------------------------------------------------
+    ENABLE_STRATEGY_GAMMA = True
+    
     class GammaConfig:
-        """
-        Configuración para Operativa de Alta Frecuencia (15m)
-        """
-        RISK_USD_FIXED = 100.0        # Riesgo monetario fijo ($50 USD)
-        STOP_LOSS_PCT = 0.015        # 1.5% Stop Loss (Estricto)
-        TP1_PCT = 0.05               # 5.0% Take Profit Estructural
+        RISK_USD_FIXED = 20.0  
+        RSI_PERIOD = 14
         
-        # Gestión Dinámica (Contralor)
-        TP_DYNAMIC_THRESHOLD = 150.0 # Ganancia USD para activar cierre parcial
-        TP_DYNAMIC_QTY_PCT = 0.25    # % de la posición a cerrar al tocar umbral
+        # Filtros
+        FILTRO_DIST_FIBO_MAX = 0.008   
+        FILTRO_MACD_MIN = 0.0          
+        HEDGE_DIST_FIBO_MIN = 0.012    
+        HEDGE_MACD_MAX = -0.01         
         
-        # Smart Trailing (RSI 15m)
-        RSI_TRAILING_DIST_NORMAL = 0.03   # 3% Trailing Normal
-        RSI_TRAILING_DIST_EXTREME = 0.015 # 1.5% Trailing Apretado (Extremo)
+        # Salidas
+        TP_NORMAL = 0.035; SL_NORMAL = 0.020; TRAIL_TRIGGER_NORM = 0.50 
+        TP_HEDGE = 0.045; SL_HEDGE = 0.015; TRAIL_TRIGGER_HEDGE = 0.30
 
-    # --- 6. RUTAS ---
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    DIR_LOGS = os.path.join(BASE_DIR, 'logs')
-    FILE_LOG_ERRORS = os.path.join(DIR_LOGS, 'bitacora_errores.csv')
-    FILE_LOG_ACTIVITY = os.path.join(DIR_LOGS, 'bitacora_actividad.log')
-    FILE_LOG_ORDERS = os.path.join(DIR_LOGS, 'bitacora_ordenes.csv')
-    DIR_DATA = os.path.join(BASE_DIR, 'data', 'historical')
+    # ---------------------------------------------------------
+    # 6. ESTRATEGIA SWING V3 (FRACTIONAL)
+    # ---------------------------------------------------------
+    ENABLE_STRATEGY_SWING = True
+    
+    class SwingConfig:
+        RISK_USD_FIXED = 30.0 
+        
+        # Filtros
+        FILTRO_DIST_FIBO_MACRO = 0.025
+        FILTRO_MACD_MIN = 0.0
+        HEDGE_DIST_FIBO_MIN = 0.050
+        HEDGE_MACD_MAX = -0.05
+        
+        # Salidas
+        SL_INIT_NORMAL = 0.060; SL_INIT_HEDGE = 0.030
+        
+        # Plan Fraccionado
+        TP1_DIST = 0.06; TP1_QTY = 0.30 
+        TP2_DIST = 0.12; TP2_QTY = 0.30 
+        RUNNER_TRAIL_START = 0.15; RUNNER_GAP = 0.03
+        TP_HEDGE_FULL = 0.08
 
-    @classmethod
-    def inicializar_infraestructura(cls):
-        directorios = [cls.DIR_LOGS, cls.DIR_DATA, os.path.join(cls.BASE_DIR, 'tools')]
-        for d in directorios:
-            if not os.path.exists(d): os.makedirs(d)
+    # ---------------------------------------------------------
+    # 7. UTILS
+    # ---------------------------------------------------------
+    @staticmethod
+    def inicializar_infraestructura():
+        try:
+            os.makedirs(Config.DATA_PATH, exist_ok=True)
+            os.makedirs(Config.LOGS_PATH, exist_ok=True)
+            print("✅ Infraestructura V13.2 OK.")
+        except Exception as e:
+            print(f"❌ Error config sys: {e}")
+
+    @staticmethod
+    def validar_credenciales():
+        return bool(Config.API_KEY and Config.API_SECRET)

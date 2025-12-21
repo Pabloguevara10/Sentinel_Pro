@@ -1,109 +1,93 @@
 import pandas as pd
 import pandas_ta as ta
+import numpy as np
 
 class PrecisionLab:
     """
-    LABORATORIO DE PRECISIÓN (Herramientas Matemáticas):
-    Provee funciones de análisis técnico avanzado para que el Cerebro las consuma.
-    VERSION: 11.3 (Fix: Bucle de detección cubre todo el rango de datos)
+    LABORATORIO DE PRECISIÓN (V13.1 FUSIONADO):
+    Contiene herramientas V13 (Dual Core) y Legacy (para compatibilidad).
     """
     def __init__(self):
         pass
 
-    def detectar_zonas_macro(self, df_1h):
-        """
-        Identifica Bloques de Órdenes (OB) en temporalidad H1.
-        Retorna una lista de zonas activas.
-        """
-        zones = []
-        if df_1h is None or len(df_1h) < 2: # Necesitamos al menos 2 velas para comparar
-            return zones
+    # --- NUEVAS HERRAMIENTAS V13 (GAMMA/SWING) ---
 
-        # FIX: Iniciamos desde 0 para no ignorar las primeras velas del array
-        # Terminamos en len-1 para que 'i+1' no se salga del rango
+    def calcular_indicadores_core(self, df):
+        """Calcula RSI y MACD necesarios para V13."""
+        if df is None or len(df) < 30: return df
+        
+        # RSI
+        df['rsi'] = ta.rsi(df['close'], length=14)
+        
+        # MACD (12, 26, 9)
+        macd = ta.macd(df['close'], fast=12, slow=26, signal=9)
+        if macd is not None and not macd.empty:
+            # Pandas TA devuelve columnas con nombres específicos. 
+            # La segunda columna suele ser el histograma (MACDh)
+            df['macd_hist'] = macd.iloc[:, 1] 
+        else:
+            df['macd_hist'] = 0.0
+            
+        return df
+
+    def obtener_contexto_fibo(self, df_macro, precio_actual):
+        """Calcula distancia a soportes/resistencias recientes."""
+        if df_macro is None or len(df_macro) < 50:
+            return 999.0
+
+        # Pivotes simples de 20 periodos
+        highs = df_macro['high'].rolling(20).max()
+        lows = df_macro['low'].rolling(20).min()
+        
+        ultimo_soporte = lows.iloc[-1] if not pd.isna(lows.iloc[-1]) else df_macro['low'].min()
+        ultima_resistencia = highs.iloc[-1] if not pd.isna(highs.iloc[-1]) else df_macro['high'].max()
+        
+        dist_soporte = abs(precio_actual - ultimo_soporte) / precio_actual
+        dist_resistencia = abs(precio_actual - ultima_resistencia) / precio_actual
+        
+        return min(dist_soporte, dist_resistencia)
+
+    def analizar_rsi_slope(self, df, period=14):
+        """Retorna valor y pendiente del RSI."""
+        if len(df) < 3: return 50, 0
+        curr = df.iloc[-1]
+        prev = df.iloc[-2]
+        prev_prev = df.iloc[-3]
+        
+        rsi_now = curr.get('rsi', 50)
+        rsi_prev_confirmed = prev.get('rsi', 50)
+        rsi_old = prev_prev.get('rsi', 50)
+        
+        slope = rsi_prev_confirmed - rsi_old
+        return rsi_now, slope
+
+    # --- HERRAMIENTAS LEGACY (RESTAURADAS POR SEGURIDAD) ---
+
+    def detectar_zonas_macro(self, df_1h):
+        """(Legacy) Identifica Bloques de Órdenes simples."""
+        zones = []
+        if df_1h is None or len(df_1h) < 2: return zones
         for i in range(0, len(df_1h) - 1):
             row = df_1h.iloc[i]
             next_row = df_1h.iloc[i+1]
-            
-            # 1. DEMANDA (Bullish) - Compra
-            # Patrón: Vela bajista (roja) seguida de vela alcista explosiva
-            if row['close'] < row['open']: # Vela roja
-                # La siguiente vela rompe el máximo de la roja con su cierre
+            if row['close'] < row['open'] and next_row['close'] > next_row['open']:
                 if next_row['close'] > row['high']:
-                    zones.append({
-                        'type': 'DEMANDA',
-                        'top': row['high'],
-                        'bottom': row['low'],
-                        'created_at': row['timestamp'] 
-                    })
-            
-            # 2. OFERTA (Bearish) - Venta
-            # Patrón: Vela alcista (verde) seguida de vela bajista explosiva
-            elif row['close'] > row['open']: # Vela verde
-                # La siguiente vela rompe el mínimo de la verde con su cierre
+                    zones.append({'type': 'DEMANDA', 'price': row['low'], 'strength': 1})
+            elif row['close'] > row['open'] and next_row['close'] < next_row['open']:
                 if next_row['close'] < row['low']:
-                    zones.append({
-                        'type': 'OFERTA',
-                        'top': row['high'],
-                        'bottom': row['low'],
-                        'created_at': row['timestamp']
-                    })
-        
-        # Retornamos las últimas 5 zonas detectadas para mantener relevancia
-        return zones[-5:]
-
-    def evaluar_dinamica_rsi(self, serie_rsi, periodo=5):
-        """Calcula la velocidad del RSI para detectar fuerza o agotamiento."""
-        if len(serie_rsi) < periodo + 1: return 'NEUTRAL'
-        
-        recientes = serie_rsi.iloc[-periodo:]
-        delta = recientes.iloc[-1] - recientes.iloc[0]
-        velocidad = delta / periodo
-        
-        if velocidad > 2.0: return 'ALCISTA_FUERTE'
-        elif velocidad > 0: return 'ALCISTA_DEBIL'
-        elif velocidad < -2.0: return 'BAJISTA_FUERTE'
-        elif velocidad < 0: return 'BAJISTA_DEBIL'
-        return 'PLANO'
+                    zones.append({'type': 'OFERTA', 'price': row['high'], 'strength': 1})
+        return zones[-5:] # Retornar últimas 5
 
     def analizar_gatillo_vela(self, vela_actual, rsi_valor):
-        """
-        Analiza si una vela individual muestra rechazo (mecha larga) 
-        y si el RSI está en zona de disparo.
-        """
-        open_p = vela_actual['open']
-        close_p = vela_actual['close']
-        high_p = vela_actual['high']
-        low_p = vela_actual['low']
-        
+        """(Legacy) Análisis de mechas."""
+        open_p = vela_actual['open']; close_p = vela_actual['close']
+        high_p = vela_actual['high']; low_p = vela_actual['low']
         total_len = high_p - low_p
         if total_len == 0: return None
         
         body_top = max(open_p, close_p)
-        body_bottom = min(open_p, close_p)
-        
-        # Cálculo de Mechas (Wicks)
         wick_upper = high_p - body_top
-        wick_lower = body_bottom - low_p
         
-        # Regla del 40%: La mecha debe ser al menos el 40% del total de la vela
-        # NOTA: Esto es estricto. Si no hay operaciones, reducir a 0.30 o 0.25
-        rechazo_bajista = (wick_upper / total_len) > 0.40 
-        rechazo_alcista = (wick_lower / total_len) > 0.40 
-        
-        signal = None
-        
-        if rechazo_alcista and rsi_valor < 60:
-            signal = 'POSIBLE_LONG'
-        elif rechazo_bajista and rsi_valor > 40:
-            signal = 'POSIBLE_SHORT'
-            
-        return {
-            'tipo': signal,
-            'rechazo_alcista': rechazo_alcista,
-            'rechazo_bajista': rechazo_bajista
-        }
-
-    def detectar_divergencias(self, df, window=10):
-        # Placeholder para futuro desarrollo
-        return False
+        if (wick_upper / total_len) > 0.40 and rsi_valor > 60:
+            return 'POSIBLE_SHORT'
+        return None

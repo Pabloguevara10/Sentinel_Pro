@@ -1,0 +1,587 @@
+[
+    {
+        "id": 1764720000000,
+        "type": "BULLISH",
+        "top": 189.28,
+        "bottom": 178.01,
+        "size": 11.27000000000001,
+        "timestamp": 1764720000000,
+        "mitigated": false
+    },
+    {
+        "id": 1764547200000,
+        "type": "BEARISH",
+        "top": 180.78,
+        "bottom": 178.01,
+        "size": 2.7700000000000102,
+        "timestamp": 1764547200000,
+        "mitigated": false
+    },
+    {
+        "id": 1764201600000,
+        "type": "BULLISH",
+        "top": 181.84,
+        "bottom": 181.33,
+        "size": 0.5099999999999909,
+        "timestamp": 1764201600000,
+        "mitigated": false
+    },
+    {
+        "id": 1764028800000,
+        "type": "BULLISH",
+        "top": 173.95,
+        "bottom": 171.45,
+        "size": 2.5,
+        "timestamp": 1764028800000,
+        "mitigated": false
+    },
+    {
+        "id": 1763942400000,
+        "type": "BULLISH",
+        "top": 165.42,
+        "bottom": 163.48,
+        "size": 1.9399999999999977,
+        "timestamp": 1763942400000,
+        "mitigated": false
+    },
+    {
+        "id": 1763164800000,
+        "type": "BEARISH",
+        "top": 190.51,
+        "bottom": 182.71,
+        "size": 7.799999999999983,
+        "timestamp": 1763164800000,
+        "mitigated": false
+    },
+    {
+        "id": 1763078400000,
+        "type": "BEARISH",
+        "top": 202.76,
+        "bottom": 199.8,
+        "size": 2.9599999999999795,
+        "timestamp": 1763078400000,
+        "mitigated": false
+    },
+    {
+        "id": 1762214400000,
+        "type": "BEARISH",
+        "top": 218.16,
+        "bottom": 205.99,
+        "size": 12.169999999999987,
+        "timestamp": 1762214400000,
+        "mitigated": false
+    },
+    {
+        "id": 1761523200000,
+        "type": "BULLISH",
+        "top": 233.02,
+        "bottom": 229.01,
+        "size": 4.010000000000019,
+        "timestamp": 1761523200000,
+        "mitigated": false
+    },
+    {
+        "id": 1760918400000,
+        "type": "BULLISH",
+        "top": 217.72,
+        "bottom": 216.85,
+        "size": 0.8700000000000045,
+        "timestamp": 1760918400000,
+        "mitigated": false
+    },
+    {
+        "id": 1760745600000,
+        "type": "BEARISH",
+        "top": 222.43,
+        "bottom": 216.85,
+        "size": 5.5800000000000125,
+        "timestamp": 1760745600000,
+        "mitigated": false
+    },
+    {
+        "id": 1760659200000,
+        "type": "BEARISH",
+        "top": 236.34,
+        "bottom": 227.39,
+        "size": 8.950000000000017,
+        "timestamp": 1760659200000,
+        "mitigated": false
+    },
+    {
+        "id": 1760140800000,
+        "type": "BEARISH",
+        "top": 268.41,
+        "bottom": 244.28,
+        "size": 24.130000000000024,
+        "timestamp": 1760140800000,
+        "mitigated": false
+    },
+    {
+        "id": 1758585600000,
+        "type": "BEARISH",
+        "top": 292.6,
+        "bottom": 280.27,
+        "size": 12.330000000000041,
+        "timestamp": 1758585600000,
+        "mitigated": false
+    },
+    {
+        "id": 1758326400000,
+        "type": "BEARISH",
+        "top": 302.6,
+        "bottom": 300.86,
+        "size": 1.740000000000009,
+        "timestamp": 1758326400000,
+        "mitigated": false
+    },
+    {
+        "id": 1758153600000,
+        "type": "BULLISH",
+        "top": 302.6,
+        "bottom": 301.75,
+        "size": 0.8500000000000227,
+        "timestamp": 1758153600000,
+        "mitigated": false
+    },
+    {
+        "id": 1757980800000,
+        "type": "BEARISH",
+        "top": 302.0,
+        "bottom": 301.75,
+        "size": 0.25,
+        "timestamp": 1757980800000,
+        "mitigated": false
+    },
+    {
+        "id": 1757635200000,
+        "type": "BULLISH",
+        "top": 307.94,
+        "bottom": 306.44,
+        "size": 1.5,
+        "timestamp": 1757635200000,
+        "mitigated": false
+    },
+    {
+        "id": 1757116800000,
+        "type": "BEARISH",
+        "top": 305.83,
+        "bottom": 304.54,
+        "size": 1.2899999999999636,
+        "timestamp": 1757116800000,
+        "mitigated": false
+    },
+    {
+        "id": 1756166400000,
+        "type": "BEARISH",
+        "top": 343.23,
+        "bottom": 338.91,
+        "size": 4.319999999999993,
+        "timestamp": 1756166400000,
+        "mitigated": false
+    },
+    {
+        "id": 1755907200000,
+        "type": "BULLISH",
+        "top": 339.78,
+        "bottom": 304.99,
+        "size": 34.789999999999964,
+        "timestamp": 1755907200000,
+        "mitigated": false
+    },
+    {
+        "id": 1755734400000,
+        "type": "BULLISH",
+        "top": 293.65,
+        "bottom": 292.66,
+        "size": 0.9899999999999523,
+        "timestamp": 1755734400000,
+        "mitigated": false
+    },
+    {
+        "id": 1755561600000,
+        "type": "BEARISH",
+        "top": 293.86,
+        "bottom": 292.66,
+        "size": 1.1999999999999886,
+        "timestamp": 1755561600000,
+        "mitigated": false
+    },
+    {
+        "id": 1755302400000,
+        "type": "BEARISH",
+        "top": 303.51,
+        "bottom": 303.46,
+        "size": 0.05000000000001137,
+        "timestamp": 1755302400000,
+        "mitigated": false
+    },
+    {
+        "id": 1755043200000,
+        "type": "BULLISH",
+        "top": 316.78,
+        "bottom": 312.79,
+        "size": 3.9899999999999523,
+        "timestamp": 1755043200000,
+        "mitigated": false
+    },
+    {
+        "id": 1754784000000,
+        "type": "BULLISH",
+        "top": 297.87,
+        "bottom": 294.99,
+        "size": 2.8799999999999955,
+        "timestamp": 1754784000000,
+        "mitigated": false
+    },
+    {
+        "id": 1754697600000,
+        "type": "BULLISH",
+        "top": 289.89,
+        "bottom": 286.37,
+        "size": 3.519999999999982,
+        "timestamp": 1754697600000,
+        "mitigated": false
+    },
+    {
+        "id": 1754611200000,
+        "type": "BULLISH",
+        "top": 279.16,
+        "bottom": 264.43,
+        "size": 14.730000000000018,
+        "timestamp": 1754611200000,
+        "mitigated": false
+    },
+    {
+        "id": 1754265600000,
+        "type": "BULLISH",
+        "top": 259.41,
+        "bottom": 257.95,
+        "size": 1.4600000000000364,
+        "timestamp": 1754265600000,
+        "mitigated": false
+    },
+    {
+        "id": 1754092800000,
+        "type": "BEARISH",
+        "top": 259.65,
+        "bottom": 257.95,
+        "size": 1.6999999999999886,
+        "timestamp": 1754092800000,
+        "mitigated": false
+    },
+    {
+        "id": 1754006400000,
+        "type": "BEARISH",
+        "top": 263.58,
+        "bottom": 262.72,
+        "size": 0.8599999999999568,
+        "timestamp": 1754006400000,
+        "mitigated": false
+    },
+    {
+        "id": 1753833600000,
+        "type": "BEARISH",
+        "top": 285.59,
+        "bottom": 284.63,
+        "size": 0.9599999999999795,
+        "timestamp": 1753833600000,
+        "mitigated": false
+    },
+    {
+        "id": 1753315200000,
+        "type": "BEARISH",
+        "top": 300.04,
+        "bottom": 295.4,
+        "size": 4.640000000000043,
+        "timestamp": 1753315200000,
+        "mitigated": false
+    },
+    {
+        "id": 1753228800000,
+        "type": "BEARISH",
+        "top": 318.02,
+        "bottom": 311.78,
+        "size": 6.240000000000009,
+        "timestamp": 1753228800000,
+        "mitigated": false
+    },
+    {
+        "id": 1751846400000,
+        "type": "BULLISH",
+        "top": 277.41,
+        "bottom": 276.58,
+        "size": 0.8300000000000409,
+        "timestamp": 1751846400000,
+        "mitigated": false
+    },
+    {
+        "id": 1751241600000,
+        "type": "BULLISH",
+        "top": 268.35,
+        "bottom": 261.8,
+        "size": 6.550000000000011,
+        "timestamp": 1751241600000,
+        "mitigated": false
+    },
+    {
+        "id": 1750723200000,
+        "type": "BULLISH",
+        "top": 252.87,
+        "bottom": 238.82,
+        "size": 14.050000000000011,
+        "timestamp": 1750723200000,
+        "mitigated": false
+    },
+    {
+        "id": 1750550400000,
+        "type": "BEARISH",
+        "top": 241.88,
+        "bottom": 238.82,
+        "size": 3.0600000000000023,
+        "timestamp": 1750550400000,
+        "mitigated": false
+    },
+    {
+        "id": 1750204800000,
+        "type": "BEARISH",
+        "top": 271.65,
+        "bottom": 269.93,
+        "size": 1.7199999999999704,
+        "timestamp": 1750204800000,
+        "mitigated": false
+    },
+    {
+        "id": 1749772800000,
+        "type": "BEARISH",
+        "top": 300.19,
+        "bottom": 294.1,
+        "size": 6.089999999999975,
+        "timestamp": 1749772800000,
+        "mitigated": false
+    },
+    {
+        "id": 1749600000000,
+        "type": "BULLISH",
+        "top": 300.19,
+        "bottom": 285.61,
+        "size": 14.579999999999984,
+        "timestamp": 1749600000000,
+        "mitigated": false
+    },
+    {
+        "id": 1749513600000,
+        "type": "BULLISH",
+        "top": 282.69,
+        "bottom": 257.46,
+        "size": 25.230000000000018,
+        "timestamp": 1749513600000,
+        "mitigated": false
+    },
+    {
+        "id": 1749168000000,
+        "type": "BEARISH",
+        "top": 262.68,
+        "bottom": 254.96,
+        "size": 7.719999999999999,
+        "timestamp": 1749168000000,
+        "mitigated": false
+    },
+    {
+        "id": 1748995200000,
+        "type": "BULLISH",
+        "top": 262.68,
+        "bottom": 258.02,
+        "size": 4.660000000000025,
+        "timestamp": 1748995200000,
+        "mitigated": false
+    },
+    {
+        "id": 1748563200000,
+        "type": "BEARISH",
+        "top": 260.18,
+        "bottom": 256.24,
+        "size": 3.9399999999999977,
+        "timestamp": 1748563200000,
+        "mitigated": false
+    },
+    {
+        "id": 1747699200000,
+        "type": "BULLISH",
+        "top": 246.31,
+        "bottom": 244.0,
+        "size": 2.3100000000000023,
+        "timestamp": 1747699200000,
+        "mitigated": false
+    },
+    {
+        "id": 1746835200000,
+        "type": "BULLISH",
+        "top": 208.75,
+        "bottom": 208.6,
+        "size": 0.15000000000000568,
+        "timestamp": 1746835200000,
+        "mitigated": false
+    },
+    {
+        "id": 1746748800000,
+        "type": "BULLISH",
+        "top": 202.46,
+        "bottom": 179.96,
+        "size": 22.5,
+        "timestamp": 1746748800000,
+        "mitigated": false
+    },
+    {
+        "id": 1746144000000,
+        "type": "BULLISH",
+        "top": 171.79,
+        "bottom": 166.91,
+        "size": 4.8799999999999955,
+        "timestamp": 1746144000000,
+        "mitigated": false
+    },
+    {
+        "id": 1745366400000,
+        "type": "BULLISH",
+        "top": 157.68,
+        "bottom": 145.98,
+        "size": 11.700000000000017,
+        "timestamp": 1745366400000,
+        "mitigated": false
+    },
+    {
+        "id": 1743984000000,
+        "type": "BEARISH",
+        "top": 149.41,
+        "bottom": 136.18,
+        "size": 13.22999999999999,
+        "timestamp": 1743984000000,
+        "mitigated": false
+    },
+    {
+        "id": 1743638400000,
+        "type": "BEARISH",
+        "top": 159.06,
+        "bottom": 157.2,
+        "size": 1.8600000000000136,
+        "timestamp": 1743638400000,
+        "mitigated": false
+    },
+    {
+        "id": 1743379200000,
+        "type": "BEARISH",
+        "top": 165.66,
+        "bottom": 164.54,
+        "size": 1.1200000000000045,
+        "timestamp": 1743379200000,
+        "mitigated": false
+    },
+    {
+        "id": 1741392000000,
+        "type": "BEARISH",
+        "top": 208.06,
+        "bottom": 199.21,
+        "size": 8.849999999999994,
+        "timestamp": 1741392000000,
+        "mitigated": false
+    },
+    {
+        "id": 1740441600000,
+        "type": "BEARISH",
+        "top": 242.83,
+        "bottom": 213.46,
+        "size": 29.370000000000005,
+        "timestamp": 1740441600000,
+        "mitigated": false
+    },
+    {
+        "id": 1738540800000,
+        "type": "BEARISH",
+        "top": 294.92,
+        "bottom": 285.0,
+        "size": 9.920000000000016,
+        "timestamp": 1738540800000,
+        "mitigated": false
+    },
+    {
+        "id": 1738454400000,
+        "type": "BEARISH",
+        "top": 312.29,
+        "bottom": 304.54,
+        "size": 7.75,
+        "timestamp": 1738454400000,
+        "mitigated": false
+    },
+    {
+        "id": 1738281600000,
+        "type": "BULLISH",
+        "top": 312.29,
+        "bottom": 301.81,
+        "size": 10.480000000000018,
+        "timestamp": 1738281600000,
+        "mitigated": false
+    },
+    {
+        "id": 1738022400000,
+        "type": "BEARISH",
+        "top": 315.63,
+        "bottom": 307.62,
+        "size": 8.009999999999991,
+        "timestamp": 1738022400000,
+        "mitigated": false
+    },
+    {
+        "id": 1737936000000,
+        "type": "BEARISH",
+        "top": 325.74,
+        "bottom": 320.26,
+        "size": 5.480000000000018,
+        "timestamp": 1737936000000,
+        "mitigated": false
+    },
+    {
+        "id": 1736985600000,
+        "type": "BULLISH",
+        "top": 304.93,
+        "bottom": 301.4,
+        "size": 3.5300000000000296,
+        "timestamp": 1736985600000,
+        "mitigated": false
+    },
+    {
+        "id": 1736380800000,
+        "type": "BEARISH",
+        "top": 305.09,
+        "bottom": 299.72,
+        "size": 5.369999999999948,
+        "timestamp": 1736380800000,
+        "mitigated": false
+    },
+    {
+        "id": 1736294400000,
+        "type": "BEARISH",
+        "top": 335.63,
+        "bottom": 312.4,
+        "size": 23.230000000000018,
+        "timestamp": 1736294400000,
+        "mitigated": false
+    },
+    {
+        "id": 1735257600000,
+        "type": "BEARISH",
+        "top": 364.38,
+        "bottom": 352.0,
+        "size": 12.379999999999995,
+        "timestamp": 1735257600000,
+        "mitigated": false
+    },
+    {
+        "id": 1734998400000,
+        "type": "BULLISH",
+        "top": 365.05,
+        "bottom": 323.65,
+        "size": 41.400000000000034,
+        "timestamp": 1734998400000,
+        "mitigated": false
+    }
+]
