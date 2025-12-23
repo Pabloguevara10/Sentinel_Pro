@@ -1,3 +1,4 @@
 data/historical/*.csv
 .env
 data/historical/mapas_fvg/*.csv
+__pycache__/
