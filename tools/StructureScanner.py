@@ -1,147 +1,157 @@
+# =============================================================================
+# UBICACIÓN: tools/StructureScanner.py
+# DESCRIPCIÓN: ESCÁNER ESTRUCTURAL INSTITUCIONAL (V1 + V2 FULL)
+# =============================================================================
+
 import pandas as pd
 import numpy as np
 from scipy.signal import argrelextrema
 
 class StructureScanner:
     """
-    Herramienta de Análisis Estructural para el Ecosistema de Trading.
-    Ubicación: tools/StructureScanner.py
-    Funciones:
-    - Detección de Fractales/Pivotes (Swings).
-    - Cálculo dinámico de Retrocesos y Extensiones de Fibonacci.
-    - Detección de Divergencias (Posible Onda 5).
-    - Lectura y validación de zonas FVG externas.
+    Herramienta unificada de análisis estructural.
+    Capacidades:
+    1. Detección de Fractales (Swings)
+    2. Rupturas de Estructura (BOS/CHoCH)
+    3. Contexto Fibonacci Dinámico
+    4. Detección de Agotamiento (Onda 5)
+    5. Confluencia con FVG (Fair Value Gaps)
     """
     
-    def __init__(self, df_prices, df_fvg=None):
-        """
-        :param df_prices: DataFrame con columnas [high, low, close, rsi, timestamp]
-        :param df_fvg: DataFrame opcional con datos de FVG cargados desde data/historical/mapas_fvg
-        """
-        self.df = df_prices.copy()
+    def __init__(self, df=None, order=5, df_fvg=None):
+        self.df = df
+        self.order = order
         self.df_fvg = df_fvg
-        
-        # Parámetros configurables
-        self.swing_window = 5 # Velas a izquierda/derecha para confirmar un pivote
-    
-    def _find_pivots(self):
-        """Detecta Swing Highs y Swing Lows usando ventanas locales."""
-        # Nota: Usamos argrelextrema para encontrar picos locales
-        # order=5 significa que debe ser el máximo de 5 velas a cada lado
-        self.df['is_pivot_high'] = False
-        self.df['is_pivot_low'] = False
-        
-        high_idx = argrelextrema(self.df['high'].values, np.greater, order=self.swing_window)[0]
-        low_idx = argrelextrema(self.df['low'].values, np.less, order=self.swing_window)[0]
-        
-        self.df.iloc[high_idx, self.df.columns.get_loc('is_pivot_high')] = True
-        self.df.iloc[low_idx, self.df.columns.get_loc('is_pivot_low')] = True
-        
-        return self.df[self.df['is_pivot_high']], self.df[self.df['is_pivot_low']]
+        self.pivots = {}
 
-    def get_fibonacci_context(self, current_idx, lookback=100):
-        """
-        Analiza el último impulso relevante antes de la vela actual y calcula niveles.
-        :return: Dict con niveles y estado.
-        """
-        # Recortar datos hasta el momento actual (simulación realista)
-        # Asumimos que current_idx es el índice posicional (int)
-        slice_df = self.df.iloc[max(0, current_idx - lookback) : current_idx + 1].copy()
+    # --- MÓDULO 1: ANÁLISIS DE RUPTURAS (SWING V3 COMPAT) ---
+    def analizar_estructura(self, df):
+        """Detecta tendencia y rupturas (BOS/CHoCH) para SwingHunter."""
+        if df is None or len(df) < 50: return None
         
-        # Encontrar últimos pivotes en este slice
-        highs = slice_df[slice_df['is_pivot_high']]
-        lows = slice_df[slice_df['is_pivot_low']]
+        # Copia local para cálculos independientes
+        df_calc = df.copy()
         
-        if highs.empty or lows.empty:
-            return None
+        # Detectar extremos locales
+        df_calc['min'] = df_calc.iloc[argrelextrema(df_calc.low.values, np.less_equal, order=self.order)[0]]['low']
+        df_calc['max'] = df_calc.iloc[argrelextrema(df_calc.high.values, np.greater_equal, order=self.order)[0]]['high']
+        
+        last_highs = df_calc[df_calc['max'].notnull()]
+        last_lows = df_calc[df_calc['min'].notnull()]
+        
+        if last_highs.empty or last_lows.empty: return None
+        
+        # Últimos puntos
+        sh = last_highs.iloc[-1]
+        sl = last_lows.iloc[-1]
+        prev_sh = last_highs.iloc[-2] if len(last_highs) > 1 else sh
+        prev_sl = last_lows.iloc[-2] if len(last_lows) > 1 else sl
 
-        last_high = highs.iloc[-1]
-        last_low = lows.iloc[-1]
-        
-        # Determinar dirección del último impulso mayor
-        # Si el último High es más reciente que el último Low -> Impulso Alcista (ahora corrigiendo)
-        # Si el último Low es más reciente que el último High -> Impulso Bajista (ahora rebotando)
-        
-        mode = 'UNKNOWN'
-        fib_levels = {}
-        
-        if last_high.name > last_low.name: # Impulso Alcista previo
-            mode = 'UP_IMPULSE_RETRACING'
-            p_top = last_high['high']
-            p_bot = last_low['low'] # Buscamos el low anterior al high
+        # Definir Tendencia
+        trend = 'NEUTRAL'
+        if sh['high'] > prev_sh['high'] and sl['low'] > prev_sl['low']: trend = 'BULLISH'
+        elif sh['high'] < prev_sh['high'] and sl['low'] < prev_sl['low']: trend = 'BEARISH'
             
-            # Buscar el low real del impulso (el low más bajo entre el high previo y el actual)
-            # Simplificación: usaremos el último low detectado
-            diff = p_top - p_bot
-            fib_levels = {
-                '0.0': p_top,
-                '0.236': p_top - (diff * 0.236),
-                '0.382': p_top - (diff * 0.382),
-                '0.5': p_top - (diff * 0.5),
-                '0.618': p_top - (diff * 0.618), # Golden Pocket
-                '0.786': p_top - (diff * 0.786),
-                '1.0': p_bot
-            }
-            
-        else: # Impulso Bajista previo
-            mode = 'DOWN_IMPULSE_BOUNCING'
-            p_bot = last_low['low']
-            p_top = last_high['high']
-            
-            diff = p_top - p_bot
-            fib_levels = {
-                '0.0': p_bot,
-                '0.236': p_bot + (diff * 0.236),
-                '0.382': p_bot + (diff * 0.382),
-                '0.5': p_bot + (diff * 0.5),
-                '0.618': p_bot + (diff * 0.618), # Golden Pocket
-                '0.786': p_bot + (diff * 0.786),
-                '1.0': p_top
-            }
+        current_price = df_calc.iloc[-1]['close']
+        signal = None
+        
+        # Detección de señales
+        if current_price > sh['high']:
+            signal = 'CHOCH_BULLISH' if trend == 'BEARISH' else 'BOS_BULLISH'
+        elif current_price < sl['low']:
+            signal = 'CHOCH_BEARISH' if trend == 'BULLISH' else 'BOS_BEARISH'
 
         return {
-            'mode': mode,
-            'top_price': p_top,
-            'bottom_price': p_bot,
-            'fibs': fib_levels
+            'trend': trend,
+            'last_high': sh['high'],
+            'last_low': sl['low'],
+            'signal': signal,
+            'sh_index': sh.name,
+            'sl_index': sl.name
         }
 
+    # --- MÓDULO 2: CONTEXTO FIBONACCI & INSTITUCIONAL (GAMMA V7 / SHADOW) ---
+    def precompute(self):
+        """Pre-calcula pivotes para análisis histórico."""
+        if self.df is not None and not self.df.empty:
+            self._find_pivots_v2()
+
+    def _find_pivots_v2(self):
+        """Método interno para encontrar pivotes en self.df"""
+        max_idx = argrelextrema(self.df['high'].values, np.greater, order=self.order)[0]
+        min_idx = argrelextrema(self.df['low'].values, np.less, order=self.order)[0]
+        self.pivots['highs'] = self.df.iloc[max_idx]
+        self.pivots['lows'] = self.df.iloc[min_idx]
+
+    def get_fibonacci_context_by_price(self, current_price):
+        """Calcula proximidad a niveles Fibo clave."""
+        if self.df is None or 'highs' not in self.pivots: return None
+        
+        try:
+            last_high = self.pivots['highs']['high'].iloc[-1]
+            last_low = self.pivots['lows']['low'].iloc[-1]
+        except: return None
+        
+        if last_high <= last_low: return None 
+        
+        # Niveles Clave
+        diff = last_high - last_low
+        fibs = {
+            '0.0': last_low,
+            '0.236': last_low + 0.236 * diff,
+            '0.382': last_low + 0.382 * diff,
+            '0.5': last_low + 0.5 * diff,
+            '0.618': last_low + 0.618 * diff, # Golden Pocket
+            '0.786': last_low + 0.786 * diff,
+            '1.0': last_high
+        }
+        
+        min_dist = float('inf')
+        nearest_lvl = 0.0
+        
+        for price in fibs.values():
+            dist = abs(current_price - price)
+            if dist < min_dist: 
+                min_dist = dist
+                nearest_lvl = price
+                
+        return {
+            'min_dist_pct': min_dist / current_price, 
+            'nearest_level': nearest_lvl
+        }
+
+    # --- MÓDULO 3: HERRAMIENTAS AVANZADAS (RESTAURADAS) ---
     def detect_wave_5_exhaustion(self, current_idx):
         """
-        Detecta si estamos potencialmente en una Onda 5 (Agotamiento).
-        Lógica: Precio hace nuevo máximo pero RSI hace máximo menor (Divergencia).
+        Detecta divergencia RSI en máximos (Posible fin de Onda 5).
+        Utilizado para validaciones de reversión extra-fuertes.
         """
-        slice_df = self.df.iloc[:current_idx+1]
-        curr_price = slice_df.iloc[-1]['close']
-        curr_rsi = slice_df.iloc[-1]['rsi']
-        
-        # Buscar el pivote High anterior
-        highs = slice_df[slice_df['is_pivot_high']]
-        if len(highs) < 2: return False
-        
-        last_pivot = highs.iloc[-1]
-        
-        # Si el precio actual es mayor que el último pivote High...
-        if curr_price > last_pivot['high']:
-            # ...pero el RSI actual es MENOR que el RSI de ese pivote
-            if curr_rsi < last_pivot['rsi']:
-                return True # DIVERGENCIA BAJISTA (Posible Fin Onda 5)
-                
+        if self.df is None: return False
+        try:
+            slice_df = self.df.iloc[:current_idx+1]
+            curr_price = slice_df.iloc[-1]['close']
+            curr_rsi = slice_df.iloc[-1]['rsi']
+            
+            # Pivotes locales
+            high_idx = argrelextrema(slice_df['high'].values, np.greater, order=self.order)[0]
+            if len(high_idx) < 1: return False
+            
+            last_pivot_idx = high_idx[-1]
+            last_pivot_high = slice_df.iloc[last_pivot_idx]['high']
+            last_pivot_rsi = slice_df.iloc[last_pivot_idx]['rsi']
+            
+            # Divergencia Bajista: Precio hace nuevo alto, RSI no
+            if curr_price > last_pivot_high and curr_rsi < last_pivot_rsi:
+                return True
+        except: pass
         return False
 
     def check_fvg_confluence(self, current_price, current_ts):
-        """Verifica si el precio actual está dentro de un FVG válido."""
+        """Verifica si el precio está dentro de un FVG sin mitigar."""
         if self.df_fvg is None: return None
-        
-        # Filtrar FVGs creados antes de la vela actual y NO mitigados (simplificado)
+        # Filtrar FVGs pasados
         valid_fvgs = self.df_fvg[self.df_fvg['timestamp'] < current_ts]
-        
         for _, fvg in valid_fvgs.iterrows():
             if fvg['bottom'] <= current_price <= fvg['top']:
-                return fvg['type'] # 'BULLISH' o 'BEARISH'
-        
+                return fvg['type'] # 'BULLISH' / 'BEARISH'
         return None
-
-    def precompute(self):
-        """Ejecutar al inicio para calcular pivotes en todo el histórico."""
-        self._find_pivots()

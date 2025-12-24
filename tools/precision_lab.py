@@ -1,93 +1,102 @@
+# =============================================================================
+# UBICACIÓN: tools/precision_lab.py
+# DESCRIPCIÓN: LABORATORIO MATEMÁTICO UNIFICADO (V15)
+# =============================================================================
+
 import pandas as pd
-import pandas_ta as ta
 import numpy as np
 
 class PrecisionLab:
-    """
-    LABORATORIO DE PRECISIÓN (V13.1 FUSIONADO):
-    Contiene herramientas V13 (Dual Core) y Legacy (para compatibilidad).
-    """
-    def __init__(self):
-        pass
+    
+    # --- INTERFAZ PRINCIPAL UNIFICADA ---
+    def calculate_all(self, df):
+        """Alias moderno para cálculo completo."""
+        return self.calcular_indicadores_full(df)
 
-    # --- NUEVAS HERRAMIENTAS V13 (GAMMA/SWING) ---
+    def calcular_indicadores_full(self, df):
+        """
+        Calcula TODOS los indicadores requeridos por el ecosistema (V13 + V15).
+        Incluye: RSI, EMAs, MACD, ATR, ADX, Bollinger Bands.
+        """
+        if df is None or df.empty: return df
+        df = df.copy()
+        
+        # 1. RSI
+        df['rsi'] = self._calcular_rsi(df['close'], 14)
+        
+        # 2. EMAs
+        for span in [9, 21, 50, 200]:
+            df[f'ema_{span}'] = df['close'].ewm(span=span, adjust=False).mean()
+        
+        # 3. MACD
+        k_fast = df['close'].ewm(span=12, adjust=False).mean()
+        k_slow = df['close'].ewm(span=26, adjust=False).mean()
+        df['macd_line'] = k_fast - k_slow
+        df['macd_signal'] = df['macd_line'].ewm(span=9, adjust=False).mean()
+        df['macd_hist'] = df['macd_line'] - df['macd_signal']
 
-    def calcular_indicadores_core(self, df):
-        """Calcula RSI y MACD necesarios para V13."""
-        if df is None or len(df) < 30: return df
+        # 4. ATR
+        df['atr'] = self._calcular_atr(df, 14)
         
-        # RSI
-        df['rsi'] = ta.rsi(df['close'], length=14)
+        # 5. ADX
+        df['adx'] = self._calcular_adx(df, 14)
+
+        # 6. BOLLINGER BANDS (Shadow Hunter)
+        sma_20 = df['close'].rolling(window=20).mean()
+        std_20 = df['close'].rolling(window=20).std()
+        df['bb_upper'] = sma_20 + (std_20 * 2.0)
+        df['bb_lower'] = sma_20 - (std_20 * 2.0)
+        df['bb_mid'] = sma_20
+        df['bb_width'] = df['bb_upper'] - df['bb_lower']
         
-        # MACD (12, 26, 9)
-        macd = ta.macd(df['close'], fast=12, slow=26, signal=9)
-        if macd is not None and not macd.empty:
-            # Pandas TA devuelve columnas con nombres específicos. 
-            # La segunda columna suele ser el histograma (MACDh)
-            df['macd_hist'] = macd.iloc[:, 1] 
-        else:
-            df['macd_hist'] = 0.0
-            
         return df
 
-    def obtener_contexto_fibo(self, df_macro, precio_actual):
-        """Calcula distancia a soportes/resistencias recientes."""
-        if df_macro is None or len(df_macro) < 50:
-            return 999.0
-
-        # Pivotes simples de 20 periodos
-        highs = df_macro['high'].rolling(20).max()
-        lows = df_macro['low'].rolling(20).min()
-        
-        ultimo_soporte = lows.iloc[-1] if not pd.isna(lows.iloc[-1]) else df_macro['low'].min()
-        ultima_resistencia = highs.iloc[-1] if not pd.isna(highs.iloc[-1]) else df_macro['high'].max()
-        
-        dist_soporte = abs(precio_actual - ultimo_soporte) / precio_actual
-        dist_resistencia = abs(precio_actual - ultima_resistencia) / precio_actual
-        
-        return min(dist_soporte, dist_resistencia)
-
+    # --- MÉTODOS DE ANÁLISIS PUNTUAL (UTILIDADES) ---
+    
     def analizar_rsi_slope(self, df, period=14):
-        """Retorna valor y pendiente del RSI."""
-        if len(df) < 3: return 50, 0
-        curr = df.iloc[-1]
-        prev = df.iloc[-2]
-        prev_prev = df.iloc[-3]
-        
-        rsi_now = curr.get('rsi', 50)
-        rsi_prev_confirmed = prev.get('rsi', 50)
-        rsi_old = prev_prev.get('rsi', 50)
-        
-        slope = rsi_prev_confirmed - rsi_old
-        return rsi_now, slope
+        """Retorna (rsi_actual, pendiente)."""
+        if len(df) < period + 2: return 50.0, 0.0
+        # Calculamos solo si no existe
+        if 'rsi' not in df.columns:
+            rsi = self._calcular_rsi(df['close'], period)
+        else:
+            rsi = df['rsi']
+            
+        return rsi.iloc[-1], rsi.iloc[-1] - rsi.iloc[-2]
 
-    # --- HERRAMIENTAS LEGACY (RESTAURADAS POR SEGURIDAD) ---
+    def obtener_contexto_fibo(self, df_macro, current_price):
+        """Distancia a EMA200 (Proxy Fibo Rápido)."""
+        if df_macro.empty: return 0.0
+        ema = df_macro.iloc[-1].get('ema_200')
+        if not ema or pd.isna(ema): return 0.0
+        return (current_price - ema) / ema
 
-    def detectar_zonas_macro(self, df_1h):
-        """(Legacy) Identifica Bloques de Órdenes simples."""
-        zones = []
-        if df_1h is None or len(df_1h) < 2: return zones
-        for i in range(0, len(df_1h) - 1):
-            row = df_1h.iloc[i]
-            next_row = df_1h.iloc[i+1]
-            if row['close'] < row['open'] and next_row['close'] > next_row['open']:
-                if next_row['close'] > row['high']:
-                    zones.append({'type': 'DEMANDA', 'price': row['low'], 'strength': 1})
-            elif row['close'] > row['open'] and next_row['close'] < next_row['open']:
-                if next_row['close'] < row['low']:
-                    zones.append({'type': 'OFERTA', 'price': row['high'], 'strength': 1})
-        return zones[-5:] # Retornar últimas 5
+    # --- MÉTODOS PRIVADOS DE CÁLCULO (Disponibles para uso interno) ---
 
-    def analizar_gatillo_vela(self, vela_actual, rsi_valor):
-        """(Legacy) Análisis de mechas."""
-        open_p = vela_actual['open']; close_p = vela_actual['close']
-        high_p = vela_actual['high']; low_p = vela_actual['low']
-        total_len = high_p - low_p
-        if total_len == 0: return None
+    def _calcular_rsi(self, series, period):
+        delta = series.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        return 100 - (100 / (1 + rs))
+
+    def _calcular_atr(self, df, period):
+        high = df['high']; low = df['low']; close = df['close'].shift(1)
+        tr = pd.concat([high-low, (high-close).abs(), (low-close).abs()], axis=1).max(axis=1)
+        return tr.rolling(window=period).mean()
+
+    def _calcular_adx(self, df, period):
+        high = df['high']; low = df['low']
+        plus_dm = high.diff(); minus_dm = low.diff()
+        plus_dm[plus_dm < 0] = 0; minus_dm[minus_dm > 0] = 0
+        tr = self._calcular_atr(df, 1)
         
-        body_top = max(open_p, close_p)
-        wick_upper = high_p - body_top
+        # Evitar división por cero
+        tr_smooth = tr.ewm(alpha=1/period).mean()
+        tr_smooth = tr_smooth.replace(0, 1)
         
-        if (wick_upper / total_len) > 0.40 and rsi_valor > 60:
-            return 'POSIBLE_SHORT'
-        return None
+        plus = 100 * (plus_dm.ewm(alpha=1/period).mean() / tr_smooth)
+        minus = 100 * (minus_dm.abs().ewm(alpha=1/period).mean() / tr_smooth)
+        
+        dx = (abs(plus - minus) / (plus + minus).replace(0, 1)) * 100
+        return dx.ewm(alpha=1/period).mean()

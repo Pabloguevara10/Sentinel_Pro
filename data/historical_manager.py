@@ -2,11 +2,11 @@ import pandas as pd
 import os
 import time
 from datetime import datetime, timedelta
-from config.config import Config
+from config.config_1 import Config
 
 # IMPORTACIONES DE HERRAMIENTAS
-from data.calculator import Calculator
-from tools.fvg_scanner import FVGScanner
+from data.calculator_1 import Calculator
+from tools.fvg_scanner_1 import FVGScanner
 
 class HistoricalManager:
     """

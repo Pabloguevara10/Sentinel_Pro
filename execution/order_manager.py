@@ -1,251 +1,279 @@
-import uuid
+# =============================================================================
+# UBICACIÓN: execution/order_manager.py
+# DESCRIPCIÓN: ORDER MANAGER V16.0 (HYBRID: V15 LOGIC + V8 BLINDING)
+# =============================================================================
+
 import time
+import math
+from datetime import datetime
 from binance.error import ClientError
 
 class OrderManager:
     """
-    DEPARTAMENTO DE OPERACIONES (Ejecución V12.0 - REFINADO):
-    - Ejecuta órdenes de entrada con polling robusto.
-    - Coloca protecciones iniciales (SL y Hard TP).
-    - Gestiona actualizaciones seguras de SL (Protocolo Overlap).
+    ORDER MANAGER V16.0 (DEFINITIVO):
+    - Base Lógica: V15.14 (Polling robusto y manejo de estados).
+    - Blindaje: Calibración automática de precisión con Binance.
+    - Seguridad: Sanitización matemática de entradas.
     """
-    def __init__(self, config, api_conn, logger):
+    def __init__(self, config, api_manager, logger):
         self.cfg = config
-        self.conn = api_conn
+        self.api = api_manager
         self.log = logger
-
-    def ejecutar_estrategia(self, plan):
-        self.log.registrar_actividad("ORDER_MANAGER", f"🔫 Iniciando ejecución: {plan['strategy']} ({plan['side']})")
-
-        # --- TRADUCCIÓN API ---
-        if plan['side'] == 'LONG':
-            api_side_entry = 'BUY'
-            api_side_exit = 'SELL'
-        else:
-            api_side_entry = 'SELL'
-            api_side_exit = 'BUY'
-
-        # 1. ENVIAR ORDEN DE ENTRADA
-        qty_final = self._redondear_cantidad(plan['qty'])
         
-        params_entry = {
-            'symbol': self.cfg.SYMBOL,
-            'side': api_side_entry,
-            'type': 'MARKET',
-            'quantity': qty_final,
-            'positionSide': plan['side']
-        }
-
-        # Usamos el conector directo para place_order
-        res_entry = self.conn.place_order(params_entry)
+        # 1. Variables de Precisión (Default seguro)
+        self.qty_precision = 3     
+        self.price_precision = 2   
+        self.min_qty = 0.1         
         
-        if not res_entry or 'orderId' not in res_entry:
-            self.log.registrar_error("ORDER_MANAGER", f"Fallo en Entrada: {res_entry}")
-            return False, None
+        # 2. CALIBRACIÓN AL INICIO (NUEVO DEL BLINDAJE)
+        self._calibrar_precision_con_exchange()
 
-        entry_order_id = res_entry['orderId']
-        pos_id = str(uuid.uuid4())[:8]
-
-        # 2. BUCLE DE CONFIRMACIÓN INSISTENTE (Wait for FILL)
-        filled = False
-        intentos = 0
-        max_intentos = 5 # Esperar hasta 2.5 segundos
-        real_entry_price = 0.0
-        
-        while intentos < max_intentos:
-            try:
-                # Polling directo al cliente de binance
-                order_status = self.conn.client.query_order(symbol=self.cfg.SYMBOL, orderId=entry_order_id)
-                status = order_status.get('status', 'UNKNOWN')
-                
-                if status in ['FILLED', 'PARTIALLY_FILLED']:
-                    filled = True
-                    real_entry_price = float(order_status.get('avgPrice', 0.0))
-                    if real_entry_price == 0: 
-                        real_entry_price = self.conn.get_ticker_price(self.cfg.SYMBOL)
+    def _calibrar_precision_con_exchange(self):
+        """Consulta a Binance los decimales exactos permitidos."""
+        try:
+            # Intentamos obtener info del exchange
+            info = self.api.client.exchange_info()
+            found = False
+            for symbol_data in info['symbols']:
+                if symbol_data['symbol'] == self.cfg.SYMBOL:
+                    found = True
+                    for f in symbol_data['filters']:
+                        # Filtro de Cantidad (LOT_SIZE)
+                        if f['filterType'] == 'LOT_SIZE':
+                            step_size = float(f['stepSize'])
+                            self.min_qty = float(f['minQty'])
+                            self.qty_precision = int(round(-math.log(step_size, 10), 0))
+                        
+                        # Filtro de Precio (PRICE_FILTER)
+                        if f['filterType'] == 'PRICE_FILTER':
+                            tick_size = float(f['tickSize'])
+                            self.price_precision = int(round(-math.log(tick_size, 10), 0))
+                    
+                    self.log.registrar_actividad("ORDER_MGR", 
+                        f"🛡️ Calibrado: Qty={self.qty_precision} dec, Price={self.price_precision} dec")
                     break
-                
-            except Exception as e:
-                self.log.registrar_error("ORDER_MANAGER", f"Polling leve orden {entry_order_id}: {e}")
             
-            time.sleep(0.5)
-            intentos += 1
-        
-        if not filled:
-            self.log.registrar_actividad("ORDER_MANAGER", "⚠️ Orden enviada pero no confirmada FILLED a tiempo. Asumiendo ejecución.")
-            real_entry_price = self.conn.get_ticker_price(self.cfg.SYMBOL)
-
-        self.log.registrar_actividad("ORDER_MANAGER", f"✅ Entrada Confirmada (ID: {entry_order_id}). Precio Base: {real_entry_price}")
-
-        # 3. COLOCACIÓN DE PROTECCIONES (SL y HARD TP)
-        
-        # A. STOP LOSS
-        sl_price = self._redondear_precio(plan['sl_price'])
-        params_sl = {
-            'symbol': self.cfg.SYMBOL,
-            'side': api_side_exit,
-            'type': 'STOP_MARKET',
-            'stopPrice': sl_price,
-            'positionSide': plan['side'],
-            'timeInForce': 'GTC',
-            'closePosition': 'true' 
-        }
-
-        res_sl = self.conn.place_order(params_sl)
-        
-        sl_order_id = None
-        if res_sl and 'orderId' in res_sl:
-            sl_order_id = res_sl['orderId']
-            self.log.registrar_actividad("ORDER_MANAGER", f"🛡️ Stop Loss activado @ {sl_price}")
-        else:
-            self.log.registrar_error("ORDER_MANAGER", "🚨 FALLO CRÍTICO EN SL. CERRANDO POSICIÓN INMEDIATAMENTE.")
-            self.cerrar_posicion_mercado(plan['side'], qty_final)
-            return False, None
-
-        # B. HARD TAKE PROFIT (Si aplica)
-        tp_hard_price = plan.get('tp_hard_price', 0.0)
-        tp_hard_id = None
-        
-        if tp_hard_price > 0:
-            tp_price = self._redondear_precio(tp_hard_price)
-            params_tp = {
-                'symbol': self.cfg.SYMBOL,
-                'side': api_side_exit,
-                'type': 'TAKE_PROFIT_MARKET',
-                'stopPrice': tp_price,
-                'positionSide': plan['side'],
-                'timeInForce': 'GTC',
-                'closePosition': 'true'
-            }
-            res_tp = self.conn.place_order(params_tp)
-            if res_tp and 'orderId' in res_tp:
-                tp_hard_id = res_tp['orderId']
-                self.log.registrar_actividad("ORDER_MANAGER", f"🚀 Hard TP activado @ {tp_price}")
-
-        # C. TPs Parciales (Sniper Legacy)
-        tps_ids = []
-        if 'tps' in plan and plan['tps']:
-            for tp in plan['tps']:
-                tp_qty = self._redondear_cantidad(tp['qty'])
-                tp_price = self._redondear_precio(tp['price'])
+            if not found:
+                self.log.registrar_error("ORDER_MGR", f"⚠️ Símbolo {self.cfg.SYMBOL} no encontrado en API.")
                 
-                params_tp_limit = {
-                    'symbol': self.cfg.SYMBOL,
-                    'side': api_side_exit, 
-                    'type': 'LIMIT',
-                    'price': tp_price,
-                    'quantity': tp_qty,
-                    'positionSide': plan['side'],
-                    'timeInForce': 'GTC'
-                }
-                
-                res_tp_l = self.conn.place_order(params_tp_limit)
-                if res_tp_l:
-                    tps_ids.append({'id': res_tp_l['orderId'], 'price': tp_price, 'qty': tp_qty})
-                    self.log.registrar_actividad("ORDER_MANAGER", f"💰 TP Parcial colocado @ {tp_price}")
+        except Exception as e:
+            self.log.registrar_error("ORDER_MGR", f"Fallo en calibración (Usando defaults): {e}")
 
-        # 5. REGISTRO
-        paquete_posicion = {
-            'id': pos_id,
-            'timestamp': int(time.time() * 1000),
-            'strategy': plan['strategy'],
-            'side': plan['side'], 
-            'entry_price': real_entry_price,
-            'qty': qty_final,
-            'sl_price': sl_price,
-            'sl_order_id': sl_order_id,
-            'tp_hard_price': tp_hard_price, # Nuevo campo
-            'tp_hard_order_id': tp_hard_id, # Nuevo campo
-            'tps_config': tps_ids, 
-            'management_type': plan.get('management_type', 'STATIC'), # Para Contralor
-            'status': 'OPEN'
-        }
-        
-        self.log.registrar_orden(paquete_posicion)
-        return True, paquete_posicion
+    def _blindar_float(self, value, precision):
+        """Corta decimales sin redondear hacia arriba (evita error de saldo)."""
+        try:
+            factor = 10 ** precision
+            return math.floor(value * factor) / factor
+        except: return value
 
-    def actualizar_stop_loss_seguro(self, symbol, side_posicion, qty, nuevo_precio, id_orden_antigua):
+    # ==============================================================================
+    # EJECUCIÓN DE ESTRATEGIA (LÓGICA V15 MEJORADA)
+    # ==============================================================================
+    def ejecutar_estrategia(self, plan):
         """
-        PROTOCOLO DE SEGURIDAD "OVERLAP" PARA TRAILING STOP:
-        1. Coloca el Nuevo SL.
-        2. Verifica que Binance confirmó y devolvió un ID válido.
-        3. Solo entonces, cancela el SL antiguo.
+        Ejecuta Entrada -> Espera Llenado (Polling) -> Ejecuta SL.
         """
         try:
-            # Determinar el lado de la orden de protección (Inverso a la posición)
-            side_sl = 'SELL' if side_posicion == 'LONG' else 'BUY'
-            precio_final = self._redondear_precio(nuevo_precio)
+            # 1. Preparar Datos
+            symbol = self.cfg.SYMBOL
+            side = plan['side']
+            raw_entry = float(plan['price'])
             
-            # PASO 1: Colocar Nuevo SL (Sin tocar el viejo aún)
-            # self.log.registrar_actividad("ORDER_MANAGER", f"🛡️ Ajustando Trailing SL a {precio_final}...")
+            # --- BLINDAJE MATEMÁTICO (NUEVO) ---
+            # Ajustamos la cantidad a los decimales exactos de Binance
+            raw_qty = float(plan['qty'])
+            qty = self._blindar_float(raw_qty, self.qty_precision)
             
-            # Construcción manual de params para usar place_order del conector
-            params = {
+            # Validación de Mínimos
+            if qty < self.min_qty:
+                self.log.registrar_error("ORDER_MGR", f"⛔ Orden muy pequeña: {qty} < {self.min_qty}")
+                return False, None
+
+            self.log.registrar_actividad("ORDER_MGR", f"⚡ Iniciando: {side} {symbol} x{qty}")
+
+            # -----------------------------------------------------------
+            # PASO 1: ENTRADA A MERCADO
+            # -----------------------------------------------------------
+            # Definir Lados para API (Hedge Mode)
+            pos_side = side # 'LONG' o 'SHORT'
+            order_side = 'BUY' if side == 'LONG' else 'SELL'
+            
+            # Ejecutar con API Manager
+            ok_entry, resp_entry = self.api.place_market_order(
+                symbol=symbol,
+                side=order_side,
+                qty=qty,
+                position_side=pos_side
+            )
+
+            if not ok_entry:
+                self.log.registrar_error("ORDER_MGR", f"❌ Fallo Entrada: {resp_entry}")
+                return False, None
+
+            order_id = resp_entry['orderId']
+            
+            # -----------------------------------------------------------
+            # PASO 2: POLLING (ESPERA ACTIVA V15)
+            # -----------------------------------------------------------
+            # Esperamos a que la orden pase de NEW a FILLED
+            fill_price, filled_qty = self._esperar_llenado(symbol, order_id)
+            
+            if fill_price == 0:
+                self.log.registrar_error("ORDER_MGR", "⚠️ Timeout esperando llenado. Cancelando operación.")
+                self.cancelar_orden(order_id)
+                return False, None
+
+            self.log.registrar_actividad("ORDER_MGR", f"✅ Entrada Confirmada @ {fill_price}")
+
+            # -----------------------------------------------------------
+            # PASO 3: STOP LOSS (PROTECCIÓN)
+            # -----------------------------------------------------------
+            # Calcular SL basado en el plan o blindado
+            sl_price_raw = float(plan['sl_price'])
+            sl_price = round(sl_price_raw, self.price_precision)
+            
+            sl_side = 'SELL' if side == 'LONG' else 'BUY'
+            
+            ok_sl, resp_sl = self.api.place_stop_loss(
+                symbol=symbol,
+                side=sl_side,
+                position_side=pos_side,
+                stop_price=sl_price
+            )
+
+            sl_id = resp_sl['orderId'] if ok_sl else None
+            
+            if not ok_sl:
+                self.log.registrar_error("ORDER_MGR", f"⚠️ ALERTA: SL Falló ({resp_sl}). Cerrando por seguridad.")
+                # Cierre de emergencia si no hay SL
+                self.cerrar_posicion(symbol) 
+                return False, None
+
+            self.log.registrar_actividad("ORDER_MGR", f"🛡️ SL Colocado @ {sl_price}")
+
+            # -----------------------------------------------------------
+            # PASO 4: RETORNO DE PAQUETE
+            # -----------------------------------------------------------
+            paquete = {
+                'id': str(uuid.uuid4())[:8],
                 'symbol': symbol,
-                'side': side_sl,
-                'type': 'STOP_MARKET',
-                'stopPrice': precio_final,
-                'positionSide': side_posicion, # Binance Futures Hedge Mode requiere esto
-                'closePosition': 'true',
-                'timeInForce': 'GTC'
+                'side': side,
+                'entry_price': fill_price,
+                'qty': filled_qty,
+                'sl_price': sl_price,
+                'sl_order_id': sl_id,
+                'timestamp': time.time(),
+                'status': 'OPEN'
             }
             
-            res = self.conn.place_order(params)
-            
-            nuevo_id = None
-            if res and 'orderId' in res:
-                nuevo_id = res['orderId']
-            
-            if not nuevo_id:
-                self.log.registrar_error("ORDER_MANAGER", "❌ Binance no confirmó el nuevo SL. Abortando cambio. (SL Viejo mantenido)")
-                return False
-
-            # PASO 2: Eliminar Viejo SL (Ya estamos seguros con el nuevo)
-            try:
-                self.cancelar_orden(id_orden_antigua)
-                self.log.registrar_actividad("ORDER_MANAGER", f"✅ SL actualizado a {precio_final}. Protección asegurada.")
-            except Exception as e:
-                # Advertencia menor: Tenemos 2 SLs activos. Es redundante pero SEGURO.
-                self.log.registrar_error("ORDER_MANAGER", f"⚠️ Aviso: No se borró el SL viejo ({id_orden_antigua}). Revisar manual. Error: {e}")
-
-            return True
+            self._registrar_en_csv(paquete)
+            return True, paquete
 
         except Exception as e:
-            self.log.registrar_error("ORDER_MANAGER", f"⛔ Error Desconocido al mover SL: {e}")
-            return False
+            self.log.registrar_error("ORDER_MGR", f"Excepción Crítica: {e}")
+            return False, None
 
+    def _esperar_llenado(self, symbol, order_id, retries=10):
+        """Espera activa (Polling) para confirmar precio real de entrada."""
+        for i in range(retries):
+            try:
+                # Usamos client directo para mayor velocidad
+                order = self.api.client.query_order(symbol=symbol, orderId=order_id)
+                status = order['status']
+                
+                if status == 'FILLED':
+                    avg_price = float(order['avgPrice'])
+                    qty = float(order['executedQty'])
+                    return avg_price, qty
+                
+                elif status in ['CANCELED', 'REJECTED', 'EXPIRED']:
+                    return 0, 0
+                
+                time.sleep(0.5) # Espera 500ms
+                
+            except Exception as e:
+                self.log.registrar_error("ORDER_MGR", f"Polling error: {e}")
+                time.sleep(0.5)
+        
+        return 0, 0
+
+    # ==============================================================================
+    # MÉTODOS DE GESTIÓN (COMPATIBILIDAD V15)
+    # ==============================================================================
     def cancelar_orden(self, order_id):
-        return self.conn.cancel_order(self.cfg.SYMBOL, order_id)
+        """Cancela una orden por ID."""
+        return self.api.cancel_order(self.cfg.SYMBOL, order_id)
 
-    def cerrar_posicion_mercado(self, position_side, qty):
-        side = 'SELL' if position_side == 'LONG' else 'BUY' 
-        params = {
-            'symbol': self.cfg.SYMBOL,
-            'side': side, 
-            'type': 'MARKET',
-            'quantity': qty,
-            'positionSide': position_side
-        }
-        self.conn.place_order(params)
+    def cancelar_todo(self):
+        """Cancela todas las órdenes abiertas."""
+        return self.api.cancel_all_orders()
 
-    def cerrar_posicion_parcial(self, position_side, qty):
-        side = 'SELL' if position_side == 'LONG' else 'BUY'
-        qty_clean = self._redondear_cantidad(qty)
-        params = {
-            'symbol': self.cfg.SYMBOL,
-            'side': side,
-            'type': 'MARKET',
-            'quantity': qty_clean,
-            'positionSide': position_side
-        }
-        res = self.conn.place_order(params)
-        if res and 'orderId' in res:
-            self.log.registrar_actividad("ORDER_MANAGER", f"✂️ Cierre Parcial: {qty_clean}")
+    def cerrar_posicion(self, symbol, reason="EXIT"):
+        """Cierra la posición completa a mercado."""
+        try:
+            self.api.cancel_all_open_orders(symbol)
+            pos = self.api.get_position_info(symbol)
+            
+            # Buscar posición activa
+            target_pos = None
+            if isinstance(pos, list):
+                for p in pos:
+                    if float(p['positionAmt']) != 0:
+                        target_pos = p
+                        break
+            else:
+                target_pos = pos if float(pos['positionAmt']) != 0 else None
+
+            if not target_pos: return True # Ya estaba cerrada
+
+            qty = abs(float(target_pos['positionAmt']))
+            side = 'LONG' if float(target_pos['positionAmt']) > 0 else 'SHORT'
+            
+            # Operación contraria
+            close_side = 'SELL' if side == 'LONG' else 'BUY'
+            
+            self.api.place_market_order(
+                symbol=symbol, 
+                side=close_side, 
+                qty=qty, 
+                position_side=side
+            )
             return True
-        return False
+        except: return False
+        
+    def reducir_posicion(self, symbol, qty, reason="PARTIAL"):
+        """Cierre parcial blindado."""
+        try:
+            # Blindar cantidad
+            final_qty = self._blindar_float(qty, self.qty_precision)
+            
+            # Obtener lado actual (asumiendo que lo sabemos o lo consultamos)
+            # Simplificado para no hacer otra call a la API si no es necesario
+            # Pero para seguridad consultamos:
+            pos = self.api.get_position_info(symbol)
+            target_pos = None
+            for p in pos:
+                if float(p['positionAmt']) != 0:
+                    target_pos = p; break
+            
+            if not target_pos: return False
+            
+            side = 'LONG' if float(target_pos['positionAmt']) > 0 else 'SHORT'
+            close_side = 'SELL' if side == 'LONG' else 'BUY'
 
-    def _redondear_precio(self, precio):
-        return round(precio, 2) 
+            self.api.place_market_order(
+                symbol=symbol,
+                side=close_side,
+                qty=final_qty,
+                position_side=side,
+                reduce_only=True
+            )
+            return True
+        except: return False
 
-    def _redondear_cantidad(self, qty):
-        return round(qty, 1)
+    def _registrar_en_csv(self, paquete):
+        try:
+            ts_str = datetime.fromtimestamp(paquete['timestamp']).strftime("%Y-%m-%d %H:%M:%S")
+            line = f"{paquete['id']},{ts_str},SNIPER,{paquete['side']},{paquete['entry_price']},{paquete['qty']},{paquete['sl_price']},{paquete['sl_order_id']},NONE,OPEN\n"
+            with open(self.cfg.FILE_ORDERS, 'a') as f: f.write(line)
+        except: pass

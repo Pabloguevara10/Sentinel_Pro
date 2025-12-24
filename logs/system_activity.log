@@ -1,0 +1,3 @@
+2025-12-24 14:02:31,095 | INFO | [API_MANAGER] 📡 Conectando con Binance Futures (TESTNET)...
+2025-12-24 14:02:32,149 | INFO | [API_MANAGER] Conexión Establecida. Diff Tiempo: 896ms
+2025-12-24 14:02:43,573 | ERROR | [MAIN] ❌ CRITICO: Fallo fatal en arranque: type object 'Config' has no attribute 'TIMEFRAMES'

@@ -5,9 +5,9 @@ from config.config import Config
 
 class APIManager:
     """
-    DEPARTAMENTO DE COMUNICACIONES (V12.0 - REAL/TESTNET HÍBRIDO):
-    Gestiona la conexión segura con Binance.
-    Ahora selecciona la URL correcta según Config.TESTNET.
+    DEPARTAMENTO DE COMUNICACIONES (V7.8 - COMPATIBLE & DUAL):
+    - Estructura idéntica al V15 (Importa Config internamente).
+    - Soporte Dual Testnet/Live sin cambiar el constructor.
     """
     def __init__(self, logger):
         self.log = logger
@@ -16,13 +16,17 @@ class APIManager:
 
     def _conectar_y_validar(self):
         try:
-            # Lógica de Selección de URL (CRÍTICO PARA REAL TRADING)
-            if Config.TESTNET:
+            # Lógica Dual usando la Config importada
+            if Config.MODE == 'TESTNET':
                 base_url = 'https://testnet.binancefuture.com'
-                self.log.registrar_actividad("API_MANAGER", "📡 Conectando con Binance Futures (TESTNET)...")
+                self._log_msg("📡 Conectando con Binance Futures (TESTNET)...")
             else:
-                base_url = 'https://fapi.binance.com' # URL REAL
-                self.log.registrar_actividad("API_MANAGER", "📡 Conectando con Binance Futures (REAL)...")
+                base_url = 'https://fapi.binance.com'
+                self._log_msg("🚨 Conectando con Binance Futures (REAL)...")
+
+            # Validar credenciales
+            if not Config.API_KEY or not Config.API_SECRET:
+                raise ValueError(f"Credenciales vacías para modo {Config.MODE}")
 
             self.client = UMFutures(
                 key=Config.API_KEY, 
@@ -30,84 +34,119 @@ class APIManager:
                 base_url=base_url
             )
             
-            # Sincronización de Tiempo (Evita error -1021)
+            # Prueba de vida
             server_time = self.client.time()['serverTime']
-            diff = int(time.time() * 1000) - server_time
-            if abs(diff) > 1000:
-                self.log.registrar_actividad("API_MANAGER", f"⚠️ Ajuste de reloj: {diff}ms")
-
-            self._configurar_cuenta()
-            self.log.registrar_actividad("API_MANAGER", "✅ Conexión Establecida y Cuenta Validada (HEDGE/ISOLATED).")
-
-        except Exception as e:
-            self.log.registrar_error("API_MANAGER", f"Fallo crítico de conexión: {e}", critico=True)
-            raise e
-
-    def _configurar_cuenta(self):
-        try:
-            # 1. Modo Hedge (Posiciones Bidireccionales)
-            try:
-                self.client.change_position_mode(dualSidePosition='true')
-            except ClientError as e:
-                if -4059 != e.error_code: raise e # Ignorar si ya está en Hedge
-
-            # 2. Modo Margen (Aislado para seguridad)
-            try:
-                self.client.change_margin_type(symbol=Config.SYMBOL, marginType=Config.MARGIN_TYPE)
-            except ClientError as e:
-                if 'No need to change' not in str(e): raise e
-
-            # 3. Apalancamiento (Seguridad x5)
-            self.client.change_leverage(symbol=Config.SYMBOL, leverage=Config.LEVERAGE)
+            self._log_msg(f"Conexión Establecida. Ping: {server_time}")
             
         except Exception as e:
-            self.log.registrar_error("API_MANAGER", f"Error configurando cuenta: {e}", critico=True)
+            self._log_err(f"Error crítico de conexión: {e}")
             raise e
 
-    # --- CONSULTA DE DATOS ---
+    # Helpers de log compatibles
+    def _log_msg(self, msg):
+        if hasattr(self.log, 'registrar_actividad'): self.log.registrar_actividad("API_MANAGER", msg)
+        elif hasattr(self.log, 'log_operational'): self.log.log_operational("API_MANAGER", msg)
+        else: print(f"[API] {msg}")
 
-    def get_ticker_price(self, symbol):
-        try:
-            return float(self.client.ticker_price(symbol=symbol)['price'])
-        except Exception:
-            return 0.0
+    def _log_err(self, msg):
+        if hasattr(self.log, 'registrar_error'): self.log.registrar_error("API_MANAGER", msg)
+        elif hasattr(self.log, 'log_error'): self.log.log_error("API_MANAGER", msg)
+        else: print(f"[API ERROR] {msg}")
 
-    def get_open_positions_info(self):
-        """Descarga las posiciones reales desde Binance para auditoría."""
+    # --- MÉTODOS DE CONSULTA (LEGACY V15) ---
+
+    def check_heartbeat(self):
         try:
-            return self.client.get_position_risk(symbol=Config.SYMBOL)
+            self.client.time()
+            return True
+        except: return False
+
+    def get_real_price(self, symbol=None):
+        sym = symbol if symbol else Config.SYMBOL
+        try:
+            ticker = self.client.ticker_price(symbol=sym)
+            return float(ticker['price'])
         except Exception as e:
-            self.log.registrar_error("API_MANAGER", f"Error obteniendo posiciones: {e}")
-            return []
+            self._log_err(f"Fallo ticker: {e}")
+            return None
 
-    def get_historical_candles(self, symbol, interval, limit=1000, start_time=None):
+    def get_historical_candles(self, symbol, interval, limit=100, start_time=None):
         try:
             params = {'symbol': symbol, 'interval': interval, 'limit': limit}
             if start_time: params['startTime'] = start_time
             return self.client.klines(**params)
-        except Exception: return []
-
-    # --- EJECUCIÓN DE ÓRDENES ---
-    
-    def place_order(self, params):
-        try:
-            return self.client.new_order(**params)
-        except ClientError as e:
-            self.log.registrar_error("API_MANAGER", f"Binance rechazó orden: {e.error_message}")
-            return None
         except Exception as e:
-            self.log.registrar_error("API_MANAGER", f"Error de ejecución: {e}")
-            return None
-    
+            self._log_err(f"Fallo klines: {e}")
+            return []
+
+    # --- MÉTODOS DE EJECUCIÓN (FIRMA V15) ---
+
+    def place_market_order(self, symbol, side, qty, position_side=None, reduce_only=False):
+        try:
+            params = {
+                'symbol': symbol,
+                'side': side,
+                'type': 'MARKET',
+                'quantity': float(qty)
+            }
+            if position_side: params['positionSide'] = position_side
+            if reduce_only: params['reduceOnly'] = 'true'
+            
+            return True, self.client.new_order(**params)
+        except Exception as e:
+            self._log_err(f"Error orden mercado: {e}")
+            return False, str(e)
+
+    def place_stop_loss(self, symbol, side, position_side, stop_price):
+        try:
+            params = {
+                'symbol': symbol,
+                'side': side,
+                'positionSide': position_side,
+                'type': 'STOP_MARKET',
+                'stopPrice': float(stop_price),
+                'closePosition': 'true',
+                'timeInForce': 'GTC'
+            }
+            return True, self.client.new_order(**params)
+        except Exception as e:
+            return False, str(e)
+
+    # --- GESTIÓN DE ÓRDENES ---
+
     def cancel_order(self, symbol, order_id):
         try:
             self.client.cancel_order(symbol=symbol, orderId=order_id)
             return True
         except Exception as e:
-            self.log.registrar_error("API_MANAGER", f"Error cancelando orden {order_id}: {e}")
+            self._log_err(f"Error cancelando {order_id}: {e}")
             return False
 
-    def cancel_all_orders(self, symbol):
+    def cancel_all_open_orders(self, symbol):
         try:
             self.client.cancel_open_orders(symbol=symbol)
-        except Exception: pass
+            return True
+        except Exception as e:
+            self._log_err(f"Error cancelando todo: {e}")
+            return False
+            
+    def cancel_all_orders(self): # Alias
+        return self.cancel_all_open_orders(Config.SYMBOL)
+
+    def get_position_info(self, symbol):
+        try:
+            positions = self.client.get_position_risk(symbol=symbol)
+            if not positions: return []
+            return positions
+        except Exception as e:
+            self._log_err(f"Error leyendo posiciones: {e}")
+            return []
+            
+    def get_account_balance(self):
+        try:
+            assets = self.client.balance()
+            for asset in assets:
+                if asset['asset'] == 'USDT':
+                    return float(asset['balance'])
+            return 0.0
+        except: return 0.0

@@ -18,10 +18,13 @@ tools_path = os.path.join(project_root, 'tools')
 sys.path.append(tools_path)
 
 try:
-    from StructureScanner import StructureScanner
-    print("✅ Herramientas cargadas correctamente.")
+    # MODIFICACIÓN CRÍTICA: Importamos la versión _2 que tiene .precompute()
+    # Asegúrate de que el archivo 'tools/StructureScanner_2.py' exista.
+    from StructureScanner_2 import StructureScanner
+    print("✅ Herramientas cargadas correctamente (Versión Simulador/Audit).")
 except ImportError as e:
-    print(f"❌ Error Crítico: No se pudo importar StructureScanner. {e}")
+    print(f"❌ Error Crítico: No se pudo importar StructureScanner_2. {e}")
+    print("⚠️ Asegúrate de que 'StructureScanner_2.py' esté en la carpeta /tools")
     sys.exit(1)
 
 # =============================================================================

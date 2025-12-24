@@ -1,204 +1,214 @@
+# =============================================================================
+# UBICACIÓN: tools/data_seeder.py
+# DESCRIPCIÓN: DATA ENGINE 2.0 (SAFE GAP FILLING + NON-BLOCKING PERSISTENCE)
+# =============================================================================
+
+import time
 import pandas as pd
 import os
-import sys
-import time
-from datetime import datetime, timedelta
-
-# Ajuste de rutas
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+from binance.client import Client
 from config.config import Config
-from connections.api_manager import APIManager
-from logs.system_logger import SystemLogger
-from data.calculator import Calculator
+from tools.precision_lab import PrecisionLab
+from tools.fvg_scanner import FVGScanner
 
 class DataSeeder:
-    """
-    SEMBRADOR DE DATOS V3.0 (Delta & High Performance):
-    - Minería: Descarga solo los minutos faltantes (Gap Filling).
-    - Procesamiento: 'Delta Resampling'. No reconstruye toda la historia.
-      Solo procesa los minutos nuevos y los empalma con los archivos existentes.
-    """
-    def __init__(self):
-        self.cfg = Config()
-        self.log = SystemLogger()
-        self.conn = APIManager(self.log)
-        
-        self.target_timeframes = {
-            '3m': '3min', '5m': '5min', '15m': '15min',
-            '30m': '30min', '1h': '1h', '4h': '4h', '1d': '1D'
-        }
-        
-        self.file_1m = os.path.join(self.cfg.DIR_DATA, f"{self.cfg.SYMBOL}_1m.csv")
-
-    def _obtener_ultimo_timestamp(self):
-        """Lee el archivo 1m maestro y devuelve el último timestamp registrado."""
-        if os.path.exists(self.file_1m):
-            try:
-                # Leemos solo los encabezados y la última fila para ser rápidos
-                df = pd.read_csv(self.file_1m)
-                if not df.empty and 'timestamp' in df.columns:
-                    return int(df['timestamp'].iloc[-1])
-            except:
-                pass
-        return 0
-
-    def sembrar_datos(self):
-        print(f"\n🌱 INICIANDO SEMBRADO DE DATOS ({self.cfg.SYMBOL})...")
-        
-        # PASO 1: HIDRATAR LA FUENTE (1m)
-        last_ts = self._obtener_ultimo_timestamp()
-        ahora = int(time.time() * 1000)
-        
-        # Si el hueco es menor a 2 minutos, asumimos que está al día
-        if ahora - last_ts < 120000 and last_ts > 0:
-            print("   ✅ Data 1m está actualizada.")
+    def __init__(self, api_manager=None):
+        """
+        Inicializa el motor de datos con soporte para inyección de dependencias.
+        """
+        self.using_connector = False
+        if api_manager and hasattr(api_manager, 'client'):
+            self.client = api_manager.client
+            self.using_connector = True
         else:
-            # Definir ventana de descarga
-            if last_ts == 0:
-                print("   📥 Descargando historial completo (1 año)...")
-                # Binance permite max 1000 velas por request, el loop lo manejará si implementamos paginación
-                # Por simplicidad en V3, pedimos el bloque más reciente grande
-                # Para producción real, aquí iría un loop de paginación hacia atrás.
-                # Asumimos descarga inicial de bloque reciente.
-                start_time = None 
-            else:
-                start_time = last_ts + 1
-                diff_min = (ahora - last_ts) / 60000
-                print(f"   📥 Descargando diferencial: {diff_min:.1f} minutos faltantes...")
-
-            candles = self.conn.get_historical_candles(self.cfg.SYMBOL, '1m', limit=1500, start_time=start_time)
+            self.client = Client(Config.API_KEY, Config.API_SECRET, testnet=Config.TESTNET)
+            self.using_connector = False
             
-            if candles:
-                new_data = []
+        self.lab = PrecisionLab()
+        self.scanner = FVGScanner()
+        self.symbol = Config.SYMBOL
+        self.data_dir = Config.DIR_DATA
+        self.maps_dir = Config.DIR_MAPS
+        
+    def sembrar_datos(self):
+        """
+        Método Maestro:
+        1. Sincroniza 1m (Protocolo de Estabilidad).
+        2. Resamplea a temporalidades superiores.
+        3. Calcula indicadores y mapas FVG.
+        """
+        print(f"🚜 Sembrando datos para {self.symbol}...")
+        
+        # 1. Sincronizar Base 1m (Lógica Blindada)
+        df_1m = self._sincronizar_base_1m()
+        
+        if df_1m is None or df_1m.empty:
+            print("⚠️ Error crítico: No hay datos 1m base. Saltando ciclo de análisis.")
+            return
+
+        # 2. Generar temporalidades superiores (Resampling)
+        # Procesamos primero el 1m para indicadores y FVG
+        self._procesar_y_guardar(df_1m, '1m')
+        
+        target_tfs = [tf for tf in Config.TIMEFRAMES if tf != '1m']
+        
+        for tf in target_tfs:
+            try:
+                df_resampled = self._resamplear_df(df_1m, tf)
+                if not df_resampled.empty:
+                    self._procesar_y_guardar(df_resampled, tf)
+            except Exception as e:
+                print(f"❌ Error generando {tf}: {e}")
+        
+        # print("✅ Ciclo de datos completado.") # Ruido reducido
+
+    def _sincronizar_base_1m(self):
+        """
+        Sincronización Inteligente V3:
+        - Gap Fill desde penúltima línea.
+        - Persistencia Limitada (Max 2 intentos).
+        - Nunca borra data existente por error de red.
+        """
+        path = os.path.join(self.data_dir, f"{self.symbol}_1m.csv")
+        
+        # --- 1. CONFIGURACIÓN DE INICIO ---
+        start_ts = int((time.time() - 365*24*60*60) * 1000) # 1 año atrás default
+        mode = 'w'
+        header = True
+        
+        # --- 2. VALIDACIÓN NO DESTRUCTIVA ---
+        if os.path.exists(path):
+            try:
+                # Leemos para verificar integridad y encontrar punto de empalme
+                df_check = pd.read_csv(path) 
+                
+                if not df_check.empty and 'timestamp' in df_check.columns:
+                    # LÓGICA DE EMPALME SEGURO (Penúltima línea)
+                    if len(df_check) > 2:
+                        last_ts = int(df_check.iloc[-2]['timestamp']) # Penúltima
+                    else:
+                        last_ts = int(df_check.iloc[-1]['timestamp']) # Última
+                    
+                    start_ts = last_ts 
+                    mode = 'a' # APPEND (Nunca borrar)
+                    header = False
+                    # print(f"📂 Archivo verificado. Sincronizando desde: {pd.to_datetime(start_ts, unit='ms')}")
+                else:
+                    print("⚠️ Archivo existente vacío. Se regenerará.")
+                    
+            except pd.errors.ParserError:
+                print(f"⚠️ ARCHIVO CORRUPTO DETECTADO. Regenerando historial...")
+                mode = 'w'; header = True
+            except Exception as e:
+                print(f"⚠️ Error de acceso al archivo ({e}). Se usará data existente sin actualizar.")
+                return pd.read_csv(path) if os.path.exists(path) else None
+
+        # --- 3. BUCLE DE DESCARGA (Persistencia No Bloqueante) ---
+        now = int(time.time() * 1000)
+        current_ts = start_ts
+        intentos_fallidos = 0
+        MAX_INTENTOS = 2
+        
+        # Si estamos al día (menos de 2 mins), retornamos rápido
+        if (now - start_ts) < 120000:
+            if os.path.exists(path): return pd.read_csv(path)
+        
+        while current_ts < now:
+            try:
+                # Selección de método API correcto
+                if self.using_connector:
+                    candles = self.client.klines(symbol=self.symbol, interval="1m", limit=1000, startTime=current_ts)
+                else:
+                    candles = self.client.futures_klines(symbol=self.symbol, interval="1m", limit=1000, startTime=current_ts)
+                
+                if not candles:
+                    break # No hay más data en el exchange
+                
+                # Procesamiento
+                data = []
                 for c in candles:
-                    new_data.append({
+                    data.append({
                         'timestamp': c[0],
-                        'open': float(c[1]),
-                        'high': float(c[2]),
-                        'low': float(c[3]),
-                        'close': float(c[4]),
+                        'open': float(c[1]), 'high': float(c[2]), 
+                        'low': float(c[3]), 'close': float(c[4]), 
                         'volume': float(c[5])
                     })
                 
-                df_new = pd.DataFrame(new_data)
+                df_batch = pd.DataFrame(data)
                 
-                # Guardado Incremental (Append)
-                if last_ts > 0:
-                    df_new.to_csv(self.file_1m, mode='a', header=False, index=False)
-                else:
-                    df_new.to_csv(self.file_1m, index=False)
+                # Escritura Segura (Append)
+                write_mode = mode # 'a' o 'w'
+                write_header = header
                 
-                print(f"   ✅ Se agregaron {len(df_new)} velas nuevas a 1m.")
-            else:
-                print("   ⚠️ No se encontraron nuevos datos en Binance.")
+                df_batch.to_csv(path, mode=write_mode, header=write_header, index=False)
+                
+                # Actualizar cursor y flags
+                last_candle_ts = data[-1]['timestamp']
+                current_ts = last_candle_ts + 60000
+                mode = 'a'; header = False 
+                intentos_fallidos = 0 # Reset de contador si tenemos éxito
+                
+                now = int(time.time() * 1000) # Actualizar 'now' para evitar bucle infinito
 
-        # PASO 2: PROPAGAR CAMBIOS (Delta Processing)
-        self._regenerar_temporalidades()
-
-    def _regenerar_temporalidades(self):
-        """
-        Versión Optimizada: Solo procesa los datos nuevos para cada temporalidad.
-        """
-        print("   ⚙️ Sincronizando temporalidades (Delta Mode)...")
-        
-        # Cargar fuente completa (1m) una sola vez en memoria
-        # NOTA: En producción con archivos de GBs, esto se optimizaría con chunks.
-        if not os.path.exists(self.file_1m): return
-        df_1m = pd.read_csv(self.file_1m)
-        df_1m['datetime'] = pd.to_datetime(df_1m['timestamp'], unit='ms')
-        df_1m.set_index('datetime', inplace=True)
-
-        agg_rules = {
-            'timestamp': 'first',
-            'open': 'first',
-            'high': 'max',
-            'low': 'min',
-            'close': 'last',
-            'volume': 'sum'
-        }
-        
-        for tf_name, tf_code in self.target_timeframes.items():
-            try:
-                target_file = os.path.join(self.cfg.DIR_DATA, f"{self.cfg.SYMBOL}_{tf_name}.csv")
-                df_final = pd.DataFrame()
-                
-                # A. ESCENARIO INCREMENTAL (El archivo ya existe)
-                if os.path.exists(target_file):
-                    # 1. Cargar archivo existente
-                    df_old = pd.read_csv(target_file)
-                    
-                    if not df_old.empty:
-                        # 2. Encontrar punto de corte (Retrocedemos 1 vela por seguridad de cierre)
-                        # Tomamos el penúltimo registro como base segura
-                        if len(df_old) > 2:
-                            cut_off_ts = df_old.iloc[-2]['timestamp']
-                            # Recortamos lo viejo hasta el punto seguro
-                            df_old_safe = df_old[df_old['timestamp'] < cut_off_ts]
-                        else:
-                            # Si es muy pequeño, regeneramos todo
-                            cut_off_ts = 0
-                            df_old_safe = pd.DataFrame()
-
-                        if cut_off_ts > 0:
-                            # 3. Filtrar 1m: Solo tomamos lo que sea >= al punto de corte
-                            df_1m_delta = df_1m[df_1m['timestamp'] >= cut_off_ts]
-                            
-                            if not df_1m_delta.empty:
-                                # 4. Resamplear solo el Delta
-                                df_new_resampled = df_1m_delta.resample(tf_code).agg(agg_rules).dropna()
-                                df_new_resampled['timestamp'] = df_new_resampled['timestamp'].astype('int64')
-                                df_new_reset = df_new_resampled.reset_index(drop=True)
-                                
-                                # 5. Fusión (Viejo Seguro + Nuevo Resampleado)
-                                df_final = pd.concat([df_old_safe, df_new_reset])
-                                df_final = df_final.drop_duplicates(subset='timestamp', keep='last')
-                                
-                                sys.stdout.write(f"\r      ⚡ {tf_name}: Actualizado (Delta: {len(df_new_reset)} velas)")
-                            else:
-                                df_final = df_old
-                        else:
-                            # Fallback a regeneración total
-                            df_final = self._resamplear_total(df_1m, tf_code)
-                    else:
-                        df_final = self._resamplear_total(df_1m, tf_code)
-                
-                # B. ESCENARIO INICIAL (No existe, crear de cero)
-                else:
-                    sys.stdout.write(f"\r      🔨 {tf_name}: Creando desde cero...")
-                    df_final = self._resamplear_total(df_1m, tf_code)
-
-                sys.stdout.flush()
-                
-                # 6. Recalcular Indicadores (Siempre sobre el dataset unido para precisión)
-                # Esto es rápido en memoria y garantiza continuidad de EMAs/RSI
-                self._procesar_y_guardar(tf_name, df_final)
-                
             except Exception as e:
-                print(f"\n      ❌ Error en {tf_name}: {e}")
-
-        print("\n   ✅ Sincronización completada.")
-
-    def _resamplear_total(self, df_1m_indexed, tf_code):
-        """Helper para resampleo completo cuando no hay historial previo."""
-        agg_rules = {
-            'timestamp': 'first', 'open': 'first', 'high': 'max',
-            'low': 'min', 'close': 'last', 'volume': 'sum'
-        }
-        df_res = df_1m_indexed.resample(tf_code).agg(agg_rules).dropna()
-        df_res['timestamp'] = df_res['timestamp'].astype('int64')
-        return df_res.reset_index(drop=True)
-
-    def _procesar_y_guardar(self, tf_name, df):
-        if df.empty: return
-        # Calcular indicadores
-        df_metrics = Calculator.calcular_indicadores(df)
+                intentos_fallidos += 1
+                print(f"📡 Error de Red ({intentos_fallidos}/{MAX_INTENTOS}): {e}")
+                
+                if intentos_fallidos >= MAX_INTENTOS:
+                    print("⚠️ Red inestable. Saltando actualización para priorizar operativa.")
+                    break # SALIR DEL BUCLE Y RETORNAR DATA VIEJA
+                
+                time.sleep(1) # Espera breve antes de reintentar
         
-        # Guardar en disco
-        path = os.path.join(self.cfg.DIR_DATA, f"{self.cfg.SYMBOL}_{tf_name}.csv")
-        df_metrics.to_csv(path, index=False)
+        # --- 4. LIMPIEZA FINAL Y RETORNO ---
+        if os.path.exists(path):
+            try:
+                # Cargar y limpiar duplicados generados por el empalme seguro
+                df_final = pd.read_csv(path)
+                df_final.drop_duplicates(subset='timestamp', keep='last', inplace=True)
+                return df_final
+            except Exception:
+                return pd.DataFrame()
+            
+        return pd.DataFrame()
 
-if __name__ == "__main__":
-    # Prueba manual
-    seeder = DataSeeder()
-    seeder.sembrar_datos()
+    def _resamplear_df(self, df_1m, target_tf):
+        """Convierte velas de 1m a Target TF usando Pandas Resample."""
+        if df_1m.empty: return pd.DataFrame()
+        
+        df = df_1m.copy()
+        df['datetime'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('datetime', inplace=True)
+        
+        rule_map = {
+            '3m': '3min', '5m': '5min', '15m': '15min', 
+            '30m': '30min', '1h': '1h', '4h': '4h', '1d': '1D'
+        }
+        rule = rule_map.get(target_tf)
+        if not rule: return pd.DataFrame()
+        
+        ohlc_dict = {
+            'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',
+            'volume': 'sum', 'timestamp': 'first'
+        }
+        
+        try:
+            df_res = df.resample(rule).agg(ohlc_dict)
+            df_res.dropna(inplace=True)
+            return df_res.reset_index(drop=True)
+        except Exception:
+            return pd.DataFrame()
+
+    def _procesar_y_guardar(self, df, tf):
+        """Calcula indicadores y guarda CSVs + Mapas FVG."""
+        if df.empty: return
+
+        # 1. Calculadora (Incluye ADX, ATR, RSI...)
+        df_calc = self.lab.calcular_indicadores_full(df)
+        
+        # 2. Guardar Data Histórica (Derivados se sobrescriben, es rápido)
+        path = os.path.join(self.data_dir, f"{self.symbol}_{tf}.csv")
+        df_calc.to_csv(path, index=False)
+        
+        # 3. Escáner FVG
+        self.scanner.escanear_y_guardar(df_calc, tf, self.maps_dir)

@@ -1,160 +1,197 @@
-import time
+# =============================================================================
+# UBICACIÓN: execution/comptroller.py
+# DESCRIPCIÓN: Contralor Híbrido V15 (Seguridad Total + Tríada)
+# =============================================================================
+
 from config.config import Config
+from logs.system_logger import SystemLogger
 
 class Comptroller:
-    """
-    CONTRALORÍA V13.2 (GESTIÓN DINÁMICA COMPLETA):
-    - Sincroniza con Binance al iniciar.
-    - Gestiona Trailing Gamma V7.
-    - Gestiona Salidas Fraccionadas Swing V3.
-    """
-    def __init__(self, config, order_manager, api_manager, logger):
-        self.cfg = config
+    def __init__(self, order_manager, financials):
+        self.cfg = Config
         self.om = order_manager
-        self.api = api_manager
-        self.logger = logger
-        self.posiciones_activas = {}
+        self.fin = financials
+        self.log = SystemLogger()
+        self.posiciones_activas = {} 
+
+    def aceptar_custodia(self, paquete_orden):
+        """Registra orden en memoria y setea flags iniciales."""
+        symbol = paquete_orden['symbol']
+        paquete_orden['tp1_hit'] = False
+        paquete_orden['tp2_hit'] = False
+        paquete_orden['max_price'] = paquete_orden['entry_price']
+        
+        # ID Único para evitar sobreescritura si hay hedging/cascada
+        pid = paquete_orden.get('id')
+        if not pid:
+            import time
+            pid = f"{symbol}_{int(time.time()*1000)}"
+            paquete_orden['id'] = pid
+            
+        self.posiciones_activas[pid] = paquete_orden
+        self.log.log_info(f"🛡️ Custodia iniciada: {symbol} ({paquete_orden['strategy']})")
+
+    def auditar_posiciones(self, current_price):
+        """Loop principal de auditoría."""
+        if not self.posiciones_activas: return
+
+        for pid, pos in list(self.posiciones_activas.items()):
+            try:
+                # Actualizar High Watermark
+                if pos['side'] == 'LONG':
+                    if current_price > pos['max_price']: pos['max_price'] = current_price
+                    pnl_pct = (current_price - pos['entry_price']) / pos['entry_price']
+                else:
+                    if current_price < pos['max_price']: pos['max_price'] = current_price
+                    pnl_pct = (pos['entry_price'] - current_price) / pos['entry_price']
+                
+                pos['current_price'] = current_price
+                pos['pnl_pct'] = pnl_pct
+                
+                # Router
+                mgmt = pos.get('management_type', 'STATIC')
+                
+                if mgmt == 'DYNAMIC_TRAILING': # Gamma
+                    self._gestion_dynamic_trailing(pos, current_price)
+                elif mgmt == 'FRACTIONAL_SWING': # Swing
+                    self._gestion_fractional_swing(pos, current_price, pnl_pct)
+                elif mgmt == 'SHADOW_CASCADING': # Shadow
+                    self._gestion_shadow(pos, current_price, pnl_pct)
+                elif mgmt == 'ADOPTED_RECOVERY': # Huérfanas
+                    self._gestion_dynamic_trailing(pos, current_price)
+
+            except Exception as e:
+                self.log.log_error(f"Error auditando {pid}: {e}")
+
+    # --- LÓGICA DE GESTIÓN ---
+
+    def _gestion_shadow(self, pos, curr, pnl_pct):
+        """Shadow: Cierra si el trailing se activa."""
+        # Pico máximo relativo
+        entry = pos['entry_price']
+        peak = pos['max_price']
+        
+        if pos['side'] == 'LONG': max_gain = (peak - entry)/entry
+        else: max_gain = (entry - peak)/entry
+        
+        # Trailing
+        if max_gain > 0.01: # 1% profit min
+            trail_dist = self.cfg.SH_TRAILING_PCT # 0.05
+            if (max_gain - pnl_pct) > trail_dist:
+                self.log.log_info(f"👻 Shadow Trailing: Cerrando {pos['symbol']} @ {curr}")
+                self.om.close_position(pos['symbol'], "SHADOW_TRAIL")
+                del self.posiciones_activas[pos['id']]
+
+    def _gestion_dynamic_trailing(self, pos, curr):
+        """Gamma: Mueve el SL."""
+        if float(pos.get('sl_price', 0)) <= 0: return # Seguridad
+
+        # Trailing Distancia
+        dist = self.cfg.G_TRAIL_NORM # Usar config general o específica del trade
+        
+        new_sl = 0.0
+        if pos['side'] == 'LONG':
+            propuesto = curr * (1 - dist)
+            if propuesto > pos['sl_price']: new_sl = propuesto
+        else:
+            propuesto = curr * (1 + dist)
+            if propuesto < pos['sl_price']: new_sl = propuesto
+            
+        if new_sl > 0:
+            # Filtro de spam (0.1% cambio mínimo)
+            if abs(new_sl - pos['sl_price']) / pos['sl_price'] > 0.001:
+                if self.om.update_stop_loss(pos['symbol'], pos['side'], new_sl, pos['qty']):
+                    pos['sl_price'] = new_sl
+
+    def _gestion_fractional_swing(self, pos, curr, pnl_pct):
+        """Swing: Parciales."""
+        tp1_dist = pos.get('tp1_dist', 0.06)
+        tp2_dist = pos.get('tp2_dist', 0.12)
+        
+        # TP1
+        if not pos['tp1_hit'] and pnl_pct >= tp1_dist:
+            qty_close = pos['qty'] * pos.get('tp1_qty', 0.3)
+            self.log.log_info(f"⭐ Swing TP1: Cerrando parcial {qty_close}")
+            # Asumimos que OM tiene close_partial o similar, o usamos close_position con qty
+            self.om.close_position(pos['symbol'], "SWING_TP1", qty=qty_close)
+            pos['qty'] -= qty_close
+            pos['tp1_hit'] = True
+            
+            # Mover a BE
+            self.om.update_stop_loss(pos['symbol'], pos['side'], pos['entry_price'], pos['qty'])
+            pos['sl_price'] = pos['entry_price']
+
+        # TP2
+        elif not pos['tp2_hit'] and pnl_pct >= tp2_dist:
+            qty_close = pos['qty'] * pos.get('tp2_qty', 0.3)
+            self.log.log_info(f"🌟 Swing TP2: Cerrando parcial {qty_close}")
+            self.om.close_position(pos['symbol'], "SWING_TP2", qty=qty_close)
+            pos['qty'] -= qty_close
+            pos['tp2_hit'] = True
+            # Mover SL a TP1
+            new_sl = pos['entry_price'] * (1 + tp1_dist) if pos['side']=='LONG' else pos['entry_price'] * (1 - tp1_dist)
+            self.om.update_stop_loss(pos['symbol'], pos['side'], new_sl, pos['qty'])
+            pos['sl_price'] = new_sl
 
     def sincronizar_con_exchange(self):
         """
-        Recupera las posiciones abiertas reales desde Binance al iniciar.
-        Vital para no perder el control si el bot se reinicia.
+        Recuperación y Adopción (Restaurada).
         """
         try:
-            real_positions = self.api.get_open_positions_info()
-            self.posiciones_activas = {} # Limpiar memoria local
-            
+            # 1. Obtener posiciones reales
+            real_positions = self.fin.obtener_posiciones_activas_simple()
             if not real_positions: 
-                self.logger.registrar_actividad("COMPTROLLER", "No hay posiciones activas en Binance.")
+                self.posiciones_activas = {}
                 return
 
-            for pos in real_positions:
-                amt = float(pos['positionAmt'])
-                symbol = pos['symbol']
+            real_ids = []
+            
+            # 2. Adoptar Huérfanos
+            for rp in real_positions:
+                sym = rp['symbol']
+                # Simplificación: Usamos simbolo como ID para recuperación simple
+                # Si hay múltiples posiciones del mismo símbolo en modo Hedge, requeriría lógica extra
+                pid_match = None
+                for pid, mp in self.posiciones_activas.items():
+                    if mp['symbol'] == sym and mp['side'] == rp['side']:
+                        pid_match = pid
+                        break
                 
-                if amt != 0 and symbol == self.cfg.SYMBOL:
-                    # Reconstruimos el estado en memoria
-                    # Como no sabemos qué estrategia abrió esto (Binance no guarda eso),
-                    # asignamos 'UNKNOWN' o 'GAMMA_RECOVERED' por defecto.
-                    # Asumiremos GAMMA_NORMAL para aplicar trailing defensivo.
+                if not pid_match:
+                    self.log.log_warn(f"🕵️ Adoptando posición huérfana: {sym}")
+                    # Verificar SL (Lógica simplificada, idealmente consultar Open Orders)
+                    # Por defecto, asumimos que necesita protección
+                    self._crear_sl_emergencia(rp)
                     
-                    side = 'LONG' if amt > 0 else 'SHORT'
-                    entry = float(pos['entryPrice'])
-                    
-                    pid = f"REC_{int(time.time())}" # ID temporal
-                    
-                    self.posiciones_activas[pid] = {
-                        'symbol': symbol,
-                        'side': side,
-                        'qty': abs(amt),
-                        'entry_price': entry,
-                        'strategy': 'GAMMA_RECOVERED', # Default seguro
-                        'mode': 'GAMMA_NORMAL',        # Default seguro
-                        'sl_order_id': None,           # Tendríamos que buscar órdenes abiertas
-                        'tp1_hit': False,
-                        'tp2_hit': False
+                    # Registrar
+                    new_pid = f"REC_{sym}"
+                    self.posiciones_activas[new_pid] = {
+                        'id': new_pid,
+                        'symbol': sym,
+                        'side': rp['side'],
+                        'qty': rp['qty'],
+                        'entry_price': rp['entry_price'],
+                        'max_price': rp['entry_price'],
+                        'management_type': 'ADOPTED_RECOVERY',
+                        'strategy': 'UNKNOWN',
+                        'tp1_hit': False, 'tp2_hit': False
                     }
-                    self.logger.registrar_actividad("COMPTROLLER", f"♻️ Posición Recuperada: {side} {abs(amt)} @ {entry}")
+                    real_ids.append(new_pid)
+                else:
+                    real_ids.append(pid_match)
+
+            # 3. Limpiar memoria (Fantamas)
+            for pid in list(self.posiciones_activas.keys()):
+                if pid not in real_ids:
+                    del self.posiciones_activas[pid]
 
         except Exception as e:
-            self.logger.registrar_error("COMPTROLLER", f"Error sincronizando: {e}")
+            self.log.log_error(f"Error Sync: {e}")
 
-    def gestionar_posiciones(self, precio_actual):
-        """Bucle principal de vigilancia."""
-        if not self.posiciones_activas: return
-
-        # Convertimos a lista para poder modificar el diccionario mientras iteramos
-        for pid, pos in list(self.posiciones_activas.items()):
-            estrat = pos.get('strategy', 'UNKNOWN')
-            
-            # Si recuperamos una posición y no sabemos qué es, la tratamos como Gamma
-            if 'GAMMA' in estrat or estrat == 'UNKNOWN':
-                self._gestionar_gamma(pos, precio_actual)
-            elif 'SWING' in estrat:
-                self._gestionar_swing(pos, precio_actual)
-
-    def _gestionar_gamma(self, pos, precio):
-        """Trailing Stop para Gamma V7."""
-        mode = pos.get('mode', 'GAMMA_NORMAL')
-        cfg = self.cfg.GammaConfig
-        
-        # Configurar según modo
-        if 'NORMAL' in mode:
-            trail_trigger = cfg.TRAIL_TRIGGER_NORM
-            tp_hard = cfg.TP_NORMAL
-        else:
-            trail_trigger = cfg.TRAIL_TRIGGER_HEDGE
-            tp_hard = cfg.TP_HEDGE
-            
+    def _crear_sl_emergencia(self, pos):
+        """Crea SL al 10% si no existe."""
         entry = pos['entry_price']
         side = pos['side']
         qty = pos['qty']
-        
-        # 1. Verificar Hard Take Profit (Seguridad)
-        if side == 'LONG':
-            gain_pct = (precio - entry) / entry
-            if gain_pct >= tp_hard:
-                self.logger.registrar_actividad("COMPTROLLER", f"💰 Gamma TP Hit ({mode}): {gain_pct*100:.2f}%")
-                self.om.cerrar_posicion_mercado(side, qty)
-                return
-        else: # SHORT
-            gain_pct = (entry - precio) / entry
-            if gain_pct >= tp_hard:
-                self.logger.registrar_actividad("COMPTROLLER", f"💰 Gamma TP Hit ({mode}): {gain_pct*100:.2f}%")
-                self.om.cerrar_posicion_mercado(side, qty)
-                return
-
-        # 2. Trailing Stop Dinámico (si hay ganancia suficiente)
-        # Reutilizamos la lógica de actualizar_sl_seguro que ya tienes en OrderManager
-        # Aquí solo calculamos si vale la pena moverlo
-        # ... (Implementación simplificada para no alargar: usa lógica V7) ...
-
-    def _gestionar_swing(self, pos, precio):
-        """Gestión Fraccionada para Swing V3."""
-        mode = pos.get('mode', 'SWING_NORMAL')
-        if 'HEDGE' in mode:
-            # Swing Hedge se gestiona como Gamma (TP Fijo/Trailing simple)
-            self._gestionar_gamma(pos, precio) 
-            return
-
-        cfg = self.cfg.SwingConfig
-        entry = pos['entry_price']
-        side = pos['side']
-        qty_total = pos['qty']
-        
-        if side == 'LONG': gain_pct = (precio - entry) / entry
-        else: gain_pct = (entry - precio) / entry
-        
-        # TP1 (6%)
-        if gain_pct >= cfg.TP1_DIST and not pos.get('tp1_hit', False):
-            qty_parcial = qty_total * cfg.TP1_QTY
-            self.logger.registrar_actividad("COMPTROLLER", f"💎 SWING TP1: Asegurando {qty_parcial:.3f}")
-            
-            # Venta Parcial y Break Even
-            self.om.cerrar_posicion_parcial(side, qty_parcial)
-            self.om.actualizar_stop_loss_seguro(self.cfg.SYMBOL, side, qty_total - qty_parcial, entry, pos.get('sl_order_id'))
-            
-            pos['tp1_hit'] = True
-            pos['qty'] -= qty_parcial
-            return
-
-        # TP2 (12%)
-        if gain_pct >= cfg.TP2_DIST and not pos.get('tp2_hit', False):
-            # Calculamos sobre el remanente o sobre el total original? 
-            # El config dice 30% del total original.
-            # Como ya vendimos 30%, nos queda 70%. Vendemos otro 30%.
-            # qty_parcial debe calcularse con cuidado si qty ya disminuyó.
-            
-            # Simplificación segura: Vender la mitad de lo que queda (aprox 30% original)
-            qty_parcial = pos['qty'] * 0.45 # Ajuste a ojo para aproximar
-            
-            self.logger.registrar_actividad("COMPTROLLER", f"💎 SWING TP2: Asegurando ganancia")
-            self.om.cerrar_posicion_parcial(side, qty_parcial)
-            
-            # Mover SL a TP1
-            nuevo_sl = entry * (1 + cfg.TP1_DIST) if side == 'LONG' else entry * (1 - cfg.TP1_DIST)
-            self.om.actualizar_stop_loss_seguro(self.cfg.SYMBOL, side, pos['qty'] - qty_parcial, nuevo_sl, pos.get('sl_order_id'))
-            
-            pos['tp2_hit'] = True
-            pos['qty'] -= qty_parcial
-            return
+        sl_price = entry * 0.9 if side == 'LONG' else entry * 1.1
+        self.om.update_stop_loss(pos['symbol'], side, sl_price, qty)
