@@ -1,0 +1,2 @@
+TIMESTAMP,MODULO,TIPO_ERROR,MENSAJE,TRACEBACK
+2025-12-24 14:02:43,MAIN,CRITICO,Fallo fatal en arranque: type object 'Config' has no attribute 'TIMEFRAMES',

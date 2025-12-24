@@ -1,0 +1,9 @@
+data/historical/*.csv
+.env
+data/historical/mapas_fvg/*.csv
+<<<<<<< HEAD
+=======
+logs/data_lab/*.csv
+logs/data_lab/mapas_fvg/*.csv
+>>>>>>> 4c4d97b (commit 24/12)
+__pycache__/
