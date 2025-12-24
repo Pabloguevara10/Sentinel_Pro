@@ -1,6 +1,0 @@
-data/historical/*.csv
-.env
-data/historical/mapas_fvg/*.csv
-logs/data_lab/*.csv
-logs/data_lab/mapas_fvg/*.csv
-__pycache__/
