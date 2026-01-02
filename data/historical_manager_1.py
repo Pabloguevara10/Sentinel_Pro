@@ -1,19 +1,25 @@
+# =============================================================================
+# UBICACIÓN: data/historical_manager.py
+# DESCRIPCIÓN: GESTOR DE DATOS HISTÓRICOS (CORREGIDO V17.9)
+# =============================================================================
+
 import pandas as pd
 import os
 import time
 from datetime import datetime, timedelta
-from config.config import Config
 
-# IMPORTACIONES DE HERRAMIENTAS
+# --- CORRECCIÓN DE IMPORTACIONES ---
+# Usamos los archivos estándar (sin _1, _2)
+from config.config import Config
 from data.calculator import Calculator
 from tools.fvg_scanner import FVGScanner
 
 class HistoricalManager:
     """
-    GESTOR DE DATOS HISTÓRICOS (V12.4 - GAP FILLING INTELIGENTE):
-    - Detecta data existente con precisión quirúrgica.
-    - Solo descarga el diferencial (GAP) faltante.
-    - Previene baneos de IP evitando descargas redundantes.
+    GESTOR DE DATOS HISTÓRICOS (V12.5 - ESTANDARIZADO):
+    - Gestiona la descarga y almacenamiento de CSVs.
+    - Sincroniza velas faltantes (Gap Filling).
+    - Provee datos cacheados al Brain.
     """
     def __init__(self, api_manager, logger):
         self.api = api_manager
@@ -22,27 +28,28 @@ class HistoricalManager:
         self.fvg_scanner = FVGScanner()
         
         self.master_tf = '1m'
-        self.target_tfs = ['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d']
+        self.target_tfs = ['15m', '1h', '4h'] # TFs críticos para la Tríada
 
     def sincronizar_infraestructura_datos(self):
         # 1. SINCRONIZACIÓN QUIRÚRGICA DEL MAESTRO (1m)
         cambios_realizados = self._sincronizar_master_1m()
         
-        # Si no hubo cambios (data estaba al día), no hace falta recalcular todo
-        # a menos que sea el arranque inicial o queramos forzarlo.
-        # Para seguridad, recalculamos temporalidades si hubo descarga o si faltan archivos derivados.
-        if not cambios_realizados and self._verificar_derivados_existen():
-            # self.log.registrar_actividad("DATA_MINER", "✅ Datos al día. No se requiere procesamiento.")
-            return True
+        # Si hubo cambios o faltan derivados, procesar todo
+        if cambios_realizados or not self._verificar_derivados_existen():
+            self.log.registrar_actividad("DATA_MINER", "🔄 Procesando cascada de temporalidades...")
+            return self._regenerar_derivados()
+            
+        return True
 
-        self.log.registrar_actividad("DATA_MINER", "🔄 Procesando cascada de temporalidades...")
-
+    def _regenerar_derivados(self):
         # Cargar Master Actualizado
         path_master = os.path.join(self.base_dir, f"{Config.SYMBOL}_{self.master_tf}.csv")
         try:
             df_master = pd.read_csv(path_master)
-            df_master['datetime'] = pd.to_datetime(df_master['timestamp'], unit='ms')
-            df_master.set_index('datetime', inplace=True)
+            # Asegurar datetime
+            if 'timestamp' in df_master.columns:
+                 df_master['datetime'] = pd.to_datetime(df_master['timestamp'], unit='ms')
+                 df_master.set_index('datetime', inplace=True)
         except Exception as e:
             self.log.registrar_error("DATA_MINER", f"Error leyendo Master 1m: {e}")
             return False
@@ -54,11 +61,8 @@ class HistoricalManager:
         # 2. GENERACIÓN DE DERIVADOS
         for tf in self.target_tfs:
             try:
-                df_procesado = None
-                if tf == '1m':
-                    df_procesado = df_master.copy()
-                else:
-                    df_procesado = Calculator.resample_data(df_master, tf)
+                # Resampleo usando Calculator
+                df_procesado = Calculator.resample_data(df_master, tf)
 
                 if df_procesado is not None and not df_procesado.empty:
                     # Indicadores
@@ -67,8 +71,8 @@ class HistoricalManager:
                     # Guardar CSV Velas
                     self._guardar_csv(df_final, tf)
                     
-                    # Generar FVG (CSV Legacy)
-                    self.fvg_scanner.escanear_y_guardar(df_final, tf, dir_mapas)
+                    # Generar FVG (Opcional, si el scanner lo requiere)
+                    # self.fvg_scanner.escanear_y_guardar(df_final, tf, dir_mapas)
             
             except Exception as e:
                 self.log.registrar_error("DATA_MINER", f"Error procesando {tf}: {e}")
@@ -81,46 +85,46 @@ class HistoricalManager:
         """
         path = os.path.join(self.base_dir, f"{Config.SYMBOL}_{self.master_tf}.csv")
         
-        # Fecha por defecto: Hace 1 año
-        start_ts = int((datetime.now() - timedelta(days=365)).timestamp() * 1000)
+        # Fecha por defecto: Hace 1 mes para no saturar si es nuevo
+        start_ts = int((datetime.now() - timedelta(days=30)).timestamp() * 1000)
         modo = "FULL_DOWNLOAD (Inicial)"
         
         # VERIFICACIÓN DE DATA EXISTENTE
         if os.path.exists(path):
             try:
-                # Leemos solo el final del archivo para ser rápidos, pero Pandas requiere leer todo.
-                # Si el archivo es muy grande, esto tarda un poco, pero es seguro.
+                # Leemos solo las últimas lineas para ser eficientes
                 df_check = pd.read_csv(path)
-                
                 if not df_check.empty and 'timestamp' in df_check.columns:
                     last_ts = int(df_check.iloc[-1]['timestamp'])
                     start_ts = last_ts + 60000 # +1 minuto
                     modo = "INCREMENTAL (Gap Fill)"
-                    
-                    # Debug visual
-                    last_date = datetime.fromtimestamp(last_ts/1000)
-                    # print(f"   [DEBUG] Último registro encontrado: {last_date}")
-            except Exception as e:
-                self.log.registrar_error("DATA_MINER", f"Archivo corrupto, se descargará todo: {e}")
+            except Exception:
+                pass # Si falla, descarga completa
 
-        # VERIFICAR SI ESTAMOS AL DÍA
+        # VERIFICAR SI ESTAMOS AL DÍA (Margen de 2 min)
         now_ts = int(time.time() * 1000)
-        # Si la diferencia es menor a 2 minutos (120000 ms), asumimos que está al día
         if (now_ts - start_ts) < 120000:
             return False # No hubo cambios
 
         self.log.registrar_actividad("DATA_MINER", f"📥 Descargando 1m | Modo: {modo}")
-        # print(f"   ↳ Buscando velas desde: {datetime.fromtimestamp(start_ts/1000)}")
 
-        # BUCLE DE DESCARGA (Paginación)
+        # BUCLE DE DESCARGA PAGINADA
         current_ts = start_ts
         batch_size = 1000
         descarga_total = 0
         
         while current_ts < now_ts:
-            candles = self.api.get_historical_candles(
-                Config.SYMBOL, self.master_tf, limit=batch_size, start_time=current_ts
-            )
+            # Usamos API Manager para obtener velas
+            try:
+                candles = self.api.client.klines(
+                    symbol=Config.SYMBOL, 
+                    interval=self.master_tf, 
+                    limit=batch_size, 
+                    startTime=current_ts
+                )
+            except Exception as e:
+                self.log.registrar_error("DATA_MINER", f"API Fail: {e}")
+                break
             
             if not candles: 
                 break
@@ -135,8 +139,6 @@ class HistoricalManager:
             
             # Guardado inmediato (Append)
             df_batch = pd.DataFrame(data)
-            
-            # Si es modo FULL y es el primer lote, header=True. Si es Incremental, header=False
             es_archivo_nuevo = not os.path.exists(path)
             df_batch.to_csv(path, mode='a', header=es_archivo_nuevo, index=False)
             
@@ -145,18 +147,16 @@ class HistoricalManager:
             current_ts = last_candle_ts + 60000
             descarga_total += len(data)
             
-            # Feedback visual si la descarga es grande
-            if descarga_total % 5000 == 0:
-                fecha_actual = datetime.fromtimestamp(last_candle_ts/1000).strftime('%Y-%m-%d')
-                print(f"      ⏳ Sincronizando... Vamos por: {fecha_actual}")
-            
-            time.sleep(0.2) # Pausa técnica
+            time.sleep(0.2) # Respetar rate limits
 
-        self.log.registrar_actividad("DATA_MINER", f"✅ Sincronización finalizada. (+{descarga_total} velas)")
-        return True
+        if descarga_total > 0:
+            self.log.registrar_actividad("DATA_MINER", f"✅ Sincronización finalizada. (+{descarga_total} velas)")
+            return True
+        return False
 
     def _guardar_csv(self, df, tf):
         path = os.path.join(self.base_dir, f"{Config.SYMBOL}_{tf}.csv")
+        # Asegurar columnas limpias
         cols_base = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
         cols = cols_base + [c for c in df.columns if c not in cols_base and c != 'datetime']
         df[cols].to_csv(path, index=False)
@@ -166,10 +166,15 @@ class HistoricalManager:
         for tf in self.target_tfs:
             path = os.path.join(self.base_dir, f"{Config.SYMBOL}_{tf}.csv")
             if not os.path.exists(path):
-                return False # Falta uno, hay que procesar
+                return False 
         return True
 
     def obtener_dataframe_cache(self, tf):
+        """Método crítico usado por Main para alimentar al Brain"""
         path = os.path.join(self.base_dir, f"{Config.SYMBOL}_{tf}.csv")
-        if os.path.exists(path): return pd.read_csv(path)
+        if os.path.exists(path): 
+            try:
+                return pd.read_csv(path)
+            except:
+                return pd.DataFrame()
         return pd.DataFrame()

@@ -1,174 +1,193 @@
+# =============================================================================
+# UBICACIÓN: logic/brain.py
+# DESCRIPCIÓN: CEREBRO TRÍADA V17.9 (TIMESTAMP SAFEGUARD)
+# =============================================================================
+
 from config.config import Config
-from tools.precision_lab import PrecisionLab
-from tools.StructureScanner import StructureScanner
+from tools.StructureScanner_2 import StructureScanner
 import pandas as pd
+import pandas_ta as ta
+import numpy as np
 
 class Brain:
     """
-    CEREBRO HÍBRIDO (V13.5 - ECOSYSTEM CORE):
-    Centraliza la inteligencia del Ecosistema V13 (Simulador) 
-    y mantiene compatibilidad Legacy V12.
+    CEREBRO TRÍADA:
+    Integra las 3 lógicas del simulador Ecosystem_Triad_Sim_2.py
+    adaptadas para operar en vivo con persistencia de scanners.
     """
     def __init__(self, config):
         self.cfg = config
-        self.lab = PrecisionLab()
-        self.scanner = StructureScanner(order=5) # Scanner Institucional
-    
-    def analizar_mercado(self, cache_dfs):
-        """
-        Orquestador principal de estrategias.
-        Jerarquía: Swing V3 (Estructura) > Gamma V7 (Momentum)
-        """
-        signal = None
-        
-        # 1. MODO ECOSISTEMA (V13 - SIMULADOR)
-        # ------------------------------------
-        if self.cfg.ENABLE_ECO_SWING_V3:
-            try:
-                signal = self._analizar_eco_swing_v3(cache_dfs)
-                if signal: return signal
-            except Exception as e:
-                print(f"⚠️ Error en Brain Swing V3: {e}")
+        # Cache para scanners (evita recalcular todo cada ciclo)
+        self.scanners = {
+            '1h': None,
+            '4h': None
+        }
 
-        if self.cfg.ENABLE_ECO_GAMMA_V7:
-            try:
-                signal = self._analizar_eco_gamma_v7(cache_dfs)
-                if signal: return signal
-            except Exception as e:
-                print(f"⚠️ Error en Brain Gamma V7: {e}")
-                
-        # 2. MODO LEGACY (V12 - RESPALDO)
-        # ------------------------------------
-        if getattr(self.cfg, 'ENABLE_LEGACY_SNIPER', False):
-            # Aquí iría la llamada a _analizar_legacy_sniper si se reactiva
-            pass
+    def analizar_mercado(self, data_map):
+        """
+        data_map: Diccionario con DFs {'15m': df, '1h': df, '4h': df, ...}
+        Retorna: Lista de señales (Signals).
+        """
+        signals = []
+        
+        # 1. Validar datos mínimos requeridos
+        if not all(k in data_map for k in ['15m', '1h', '4h']):
+            return []
+
+        df_15m = data_map['15m']
+        df_1h = data_map['1h']
+        df_4h = data_map['4h']
+        
+        # Validar que no estén vacíos
+        if df_15m.empty or df_1h.empty or df_4h.empty:
+            return []
+
+        # 2. Actualizar Scanners Contextuales (1H y 4H)
+        # Instanciamos StructureScanner_2 con los datos actuales
+        self.scanners['1h'] = StructureScanner(df_1h)
+        self.scanners['1h'].precompute()
+        
+        self.scanners['4h'] = StructureScanner(df_4h)
+        self.scanners['4h'].precompute()
+
+        # 3. Datos de la vela actual (15m)
+        row_15m = df_15m.iloc[-1]
+        
+        # --- FIX CRÍTICO TIMESTAMP (V17.9) ---
+        # Extraemos el timestamp, ya sea del índice o de la columna
+        raw_ts = row_15m.get('timestamp')
+        if raw_ts is None:
+            raw_ts = row_15m.name # Fallback al índice
+
+        # Convertimos a Datetime Object seguro
+        try:
+            # Si es número (ms), convertimos. Si ya es fecha, lo dejamos.
+            if isinstance(raw_ts, (int, float, np.integer, np.floating)):
+                timestamp = pd.to_datetime(raw_ts, unit='ms')
+            else:
+                timestamp = pd.to_datetime(raw_ts)
+        except Exception:
+            # Fallback de emergencia si falla la conversión
+            timestamp = pd.Timestamp.now()
+
+        # -------------------------------------
+
+        # --- ESTRATEGIA 1: SWING V3 (Inicio de hora) ---
+        # Verificamos si es el primer ciclo de la hora (aprox)
+        if timestamp.minute == 0: 
+            sig_swing = self._check_swing(df_1h, self.scanners['4h'], df_4h, timestamp)
+            if sig_swing: signals.append(sig_swing)
+
+        # --- ESTRATEGIA 2: GAMMA V7 (Scalping 15m) ---
+        sig_gamma = self._check_gamma(row_15m, self.scanners['1h'], df_1h, timestamp)
+        if sig_gamma: signals.append(sig_gamma)
+
+        # --- ESTRATEGIA 3: SHADOW V2 (Reversión) ---
+        sig_shadow = self._check_shadow(row_15m, timestamp)
+        if sig_shadow: signals.append(sig_shadow)
+
+        return signals
+
+    # =========================================================================
+    # LÓGICAS ESPECÍFICAS (PORTED FROM SIMULATOR)
+    # =========================================================================
+
+    def _get_dist(self, ts, scanner, df_context):
+        """Calcula distancia al nivel Fibo más cercano en el contexto dado."""
+        # Simplificación para Live: Usamos la última vela del contexto disponible.
+        idx = len(df_context) - 1
+        ctx = scanner.get_fibonacci_context(idx)
+        
+        if not ctx or 'fibs' not in ctx: 
+            return 999
             
+        price = df_context.iloc[idx]['close']
+        # Distancia mínima porcentual
+        return min([abs(price - l)/price for l in ctx['fibs'].values()])
+
+    def _check_gamma(self, row, scanner_1h, df_1h, ts):
+        """Lógica TrendHunter Gamma V7"""
+        # Distancia Fibo en 1H
+        dist_1h = self._get_dist(ts, scanner_1h, df_1h)
+        
+        # Indicadores (Calculados previamente o en DataSeeder)
+        macd = row.get('macd_hist', 0)
+        rsi = row.get('rsi', 50)
+        
+        signal = None
+        mode = None
+        
+        # Parametros Config
+        cfg = self.cfg.GammaConfig
+        
+        # Lógica
+        if rsi < 30 and dist_1h < cfg.FILTRO_DIST_FIBO_MAX:
+            signal = 'LONG'; mode = 'GAMMA_NORMAL'
+        elif rsi > 70 and dist_1h < cfg.FILTRO_DIST_FIBO_MAX:
+            signal = 'SHORT'; mode = 'GAMMA_NORMAL'
+        # Hedge Logic (Reversal Counter-Trend)
+        elif rsi < 25 and dist_1h > cfg.HEDGE_DIST_FIBO_MIN and macd < cfg.HEDGE_MACD_MAX:
+            signal = 'SHORT'; mode = 'GAMMA_HEDGE'
+            
+        if signal:
+            return {
+                'strategy': 'GAMMA',
+                'signal': signal, # LONG/SHORT
+                'mode': mode,
+                'price': row['close'],
+                'timestamp': ts,
+                'confidence': 1.0
+            }
         return None
 
-    # =========================================================================
-    # LÓGICA ECOSISTEMA V13 (Simulador)
-    # =========================================================================
-    
-    def _analizar_eco_gamma_v7(self, cache_dfs):
-        """
-        TRENDHUNTER GAMMA V7:
-        Estrategia de Scalping Momentum (RSI Slope + ADX + Fibo Context).
-        TF Principal: 5m/15m | Contexto: 1h
-        """
-        if '15m' not in cache_dfs or '1h' not in cache_dfs: return None
-        df_15m = cache_dfs['15m']
-        df_1h = cache_dfs['1h']
+    def _check_swing(self, df_1h, scanner_4h, df_4h, ts):
+        """Lógica SwingHunter Alpha V3"""
+        row_1h = df_1h.iloc[-1]
+        dist_4h = self._get_dist(ts, scanner_4h, df_4h)
         
-        if len(df_15m) < 20: return None
+        cfg = self.cfg.SwingConfig
         
-        # Datos Actuales
-        row = df_15m.iloc[-1]
+        if row_1h['rsi'] < 35 and dist_4h < cfg.FILTRO_DIST_FIBO_MACRO:
+            return {
+                'strategy': 'SWING',
+                'signal': 'LONG',
+                'mode': 'SWING_NORMAL',
+                'price': row_1h['close'],
+                'timestamp': ts,
+                'confidence': 1.0
+            }
+        return None
+
+    def _check_shadow(self, row, ts):
+        """Lógica ShadowHunter V2 (Cascada Bollinger)"""
         price = row['close']
-        
-        # 1. Indicadores Core
-        rsi_val, rsi_slope = self.lab.analizar_rsi_slope(df_15m)
-        adx = row.get('adx', 0)
         atr = row.get('atr', 0)
         
-        # 2. Contexto Macro (Filtro Fibo)
-        dist_fibo = self.lab.obtener_contexto_fibo(df_1h, price)
-        cfg_g = self.cfg.GammaConfig
+        # Bandas
+        upper = row.get('bb_upper', 999999)
+        lower = row.get('bb_lower', 0)
         
-        side = None
-        mode = 'NORMAL'
-        
-        # --- LÓGICA DE GATILLO ---
-        
-        # LONG: Sobreventa + Giro rápido hacia arriba + Fuerza ADX aceptable
-        # Filtro Fibo: No comprar si estamos muy extendidos arriba (dist > max)
-        if rsi_val < 35 and rsi_slope > 2:
-            if dist_fibo < cfg_g.FILTRO_DIST_FIBO_MAX:
-                if adx > 20: # Tendencia presente
-                    side = 'LONG'
-            
-            # Hedge (Contra-tendencia arriesgada)
-            elif dist_fibo < -cfg_g.HEDGE_DIST_FIBO_MIN: # Muy extendido abajo
-                side = 'LONG'; mode = 'HEDGE'
-
-        # SHORT: Sobrecompra + Giro rápido hacia abajo
-        elif rsi_val > 65 and rsi_slope < -2:
-            if dist_fibo > -cfg_g.FILTRO_DIST_FIBO_MAX: # No muy extendido abajo
-                if adx > 20:
-                    side = 'SHORT'
-                    
-            # Hedge
-            elif dist_fibo > cfg_g.HEDGE_DIST_FIBO_MIN: # Muy extendido arriba
-                side = 'SHORT'; mode = 'HEDGE'
-                
-        if side:
+        # Short Entry (Touch Upper Band)
+        if row['high'] >= upper:
             return {
-                'strategy': 'GAMMA_V7',
-                'side': side,
-                'mode': mode,
+                'strategy': 'SHADOW',
+                'signal': 'SHORT',
+                'mode': 'SHADOW_GRID',
                 'price': price,
-                'atr': atr, # Útil para SL dinámico
-                'params': cfg_g # Pasamos la config para el Shooter
+                'timestamp': ts,
+                'atr': atr, 
+                'confidence': 0.9 
             }
-        return None
-
-    def _analizar_eco_swing_v3(self, cache_dfs):
-        """
-        SWINGHUNTER ALPHA V3:
-        Estrategia Estructural (BOS/CHOCH + Zonas).
-        TF Análisis: 1h/4h | Confirmación: 15m
-        """
-        if '1h' not in cache_dfs or '4h' not in cache_dfs: return None
-        df_1h = cache_dfs['1h']
-        df_4h = cache_dfs['4h']
-        
-        # 1. Análisis Estructural Macro (4H)
-        struct_4h = self.scanner.analizar_estructura(df_4h)
-        if not struct_4h: return None
-        
-        # 2. Análisis Estructural Micro (1H)
-        struct_1h = self.scanner.analizar_estructura(df_1h)
-        if not struct_1h: return None
-        
-        current_price = df_1h.iloc[-1]['close']
-        atr = df_1h.iloc[-1].get('atr', 0)
-        cfg_s = self.cfg.SwingConfig
-        
-        side = None
-        mode = 'NORMAL'
-        
-        # --- LÓGICA DE GATILLO ESTRUCTURAL ---
-        
-        # ESCENARIO LONG:
-        # A. Tendencia Macro Alcista Y Micro hace BOS Alcista (Continuación)
-        # B. Tendencia Macro Bajista PERO Micro hace CHOCH Alcista (Reversión)
-        
-        if struct_1h['signal'] == 'BOS_BULLISH' and struct_4h['trend'] == 'BULLISH':
-            side = 'LONG'; mode = 'SWING_TREND'
             
-        elif struct_1h['signal'] == 'CHOCH_BULLISH':
-            # Validación extra: RSI no saturado
-            rsi_1h = df_1h.iloc[-1]['rsi']
-            if rsi_1h < 70:
-                side = 'LONG'; mode = 'SWING_REVERSAL'
-        
-        # ESCENARIO SHORT:
-        if struct_1h['signal'] == 'BOS_BEARISH' and struct_4h['trend'] == 'BEARISH':
-            side = 'SHORT'; mode = 'SWING_TREND'
-            
-        elif struct_1h['signal'] == 'CHOCH_BEARISH':
-            rsi_1h = df_1h.iloc[-1]['rsi']
-            if rsi_1h > 30:
-                side = 'SHORT'; mode = 'SWING_REVERSAL'
-                
-        if side:
+        # Long Entry (Touch Lower Band)
+        if row['low'] <= lower:
             return {
-                'strategy': 'SWING_V3',
-                'side': side,
-                'mode': mode,
-                'price': current_price,
+                'strategy': 'SHADOW',
+                'signal': 'LONG',
+                'mode': 'SHADOW_GRID',
+                'price': price,
+                'timestamp': ts,
                 'atr': atr,
-                'stop_ref': struct_1h['last_low'] if side == 'LONG' else struct_1h['last_high'],
-                'params': cfg_s
+                'confidence': 0.9
             }
-        
         return None

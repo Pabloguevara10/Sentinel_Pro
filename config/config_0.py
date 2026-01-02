@@ -1,7 +1,6 @@
 # =============================================================================
 # UBICACIÓN: config/config.py
-# DESCRIPCIÓN: CONFIGURACIÓN ALTO RENDIMIENTO (10x - CAPITAL $2,000)
-# CORRECCIÓN: Alias de compatibilidad para Shooter V15 y Gestión de Riesgo
+# DESCRIPCIÓN: CONFIGURACIÓN MAESTRA (V17.8 - TRIAD SYNC)
 # =============================================================================
 
 import os
@@ -11,15 +10,14 @@ load_dotenv()
 
 class Config:
     # ---------------------------------------------------------
-    # 1. IDENTIDAD Y SISTEMA
+    # 1. IDENTIDAD Y CICLOS
     # ---------------------------------------------------------
-    BOT_NAME = "SENTINEL PRO (HIGH STAKES)"
-    VERSION = "15.0-MAX"
+    BOT_NAME = "SENTINEL PRO (HYBRID ECOSYSTEM)"
+    VERSION = "17.8-TRIAD-LIVE"
     
-    # Ciclos de Reloj (Segundos)
-    CYCLE_FAST = 1   # Auditoría y Trailing
-    CYCLE_DASH = 3   # Dashboard
-    CYCLE_SLOW = 10  # Análisis Brain / Generación Velas
+    CYCLE_FAST = 1   # Segundos (Latido)
+    CYCLE_DASH = 3   # Segundos (Visual)
+    CYCLE_SLOW = 10  # Segundos (Estrategia)
     
     # ---------------------------------------------------------
     # 2. RUTAS DE SISTEMA
@@ -29,141 +27,120 @@ class Config:
     DIR_DATA = os.path.join(BASE_DIR, "data", "historical")
     DIR_MAPS = os.path.join(DIR_DATA, "mapas_fvg")
     
-    # Alias Compatibilidad
-    DATA_PATH = DIR_DATA 
-    LOGS_PATH = DIR_LOGS
-    
+    # Archivos de Logs
     FILE_LOG_ACTIVITY = os.path.join(DIR_LOGS, "activity.log")
     FILE_LOG_ERRORS = os.path.join(DIR_LOGS, "error.log")
     FILE_LOG_ORDERS = os.path.join(DIR_LOGS, "orders.csv")
     
     # ---------------------------------------------------------
-    # 3. CREDENCIALES
+    # 3. CREDENCIALES Y MODO
     # ---------------------------------------------------------
-    API_KEY = os.getenv("BINANCE_API_KEY", "")
-    API_SECRET = os.getenv("BINANCE_API_SECRET", "")
+    MODE = 'TESTNET' # 'LIVE' o 'TESTNET'
+    
+    if MODE == 'TESTNET':
+        API_KEY = os.getenv('BINANCE_API_KEY_TESTNET')
+        API_SECRET = os.getenv('BINANCE_API_SECRET_TESTNET')
+        TESTNET = True
+    else:
+        API_KEY = os.getenv('BINANCE_API_KEY_REAL')
+        API_SECRET = os.getenv('BINANCE_API_SECRET_REAL')
+        TESTNET = False
+
     TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', '')
     TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')
     
-    SYSTEM_MODE = 'LIVE' 
-    TESTNET = False 
-    
     # ---------------------------------------------------------
-    # 4. MERCADO Y ACTIVOS
+    # 4. MERCADO
     # ---------------------------------------------------------
     SYMBOL = "AAVEUSDT"
-    TIMEFRAMES = ["1m", "3m", "5m", "15m", "30m", "1h", "4h", "1d"]
-    LIMIT_CANDLES = 1000 # Límite por petición API, no límite de histórico total
+    TIMEFRAMES = ["15m", "1h", "4h"] # TFs requeridos por la Tríada
     
-    # Precisión (AAVE)
+    LEVERAGE = 5 
+    MARGIN_TYPE = 'ISOLATED' 
+    POSITION_MODE = 'HEDGE' # Vital
+
+    # Precisión (valores base, se autocalibran)
     QTY_PRECISION = 1    
     PRICE_PRECISION = 2  
-    MIN_QTY = 0.1
-        
-    # --- APALANCAMIENTO AGRESIVO (10x) ---
-    LEVERAGE = 10
-    MARGIN_TYPE = 'ISOLATED' 
-    POSITION_MODE = 'HEDGE' 
-    
-    # ---------------------------------------------------------
-    # 5. GESTIÓN DE RIESGO (CAPITAL $2,000)
-    # ---------------------------------------------------------
-    INITIAL_CAPITAL = 2000.0 # Referencia para cálculos
-    
-    MAX_RISK_TOTAL = 5       
-    MAX_GAMMA_SLOTS = 2      
-    MAX_SWING_SLOTS = 2      
-    SH_MAX_SLOTS = 5         
 
     # ---------------------------------------------------------
-    # 6. ESTRATEGIAS ACTIVAS
+    # 5. GESTIÓN DE RIESGO GLOBAL
     # ---------------------------------------------------------
-    ENABLE_ECO_GAMMA_V7 = True   
-    ENABLE_ECO_SWING_V3 = True   
-    ENABLE_SHADOW_V2 = True      
-    
-    ENABLE_LEGACY_GAMMA = False
-    ENABLE_LEGACY_SNIPER = False
+    MAX_RISK_SLOTS = 5        # Total cupos globales
+    MAX_GAMMA_SLOTS = 2       # Límite Gamma
+    MAX_SWING_SLOTS = 2       # Límite Swing
+    MAX_SHADOW_SLOTS = 5      # Límite Shadow (Grid)
 
     # ---------------------------------------------------------
-    # 7. PARÁMETROS DE ESTRATEGIA (Con Alias para Shooter V15)
+    # 6. PROTOCOLO DE EJECUCIÓN
+    # ---------------------------------------------------------
+    class ExecutionConfig:
+        POLLING_INTERVAL = 0.5
+        MAX_WAIT_TO_FILL = 45
+        RETRY_DELAY = 0.8
+        MAX_RETRIES_ORDER = 3
+        MAX_RETRIES_SL = 5
+        MIN_NOTIONAL_VALUE = 5.1
+        DUPLICATE_DISTANCE_PCT = 0.001
+
+    # ---------------------------------------------------------
+    # 7. PARÁMETROS ESTRATEGIAS (COPIA EXACTA SIMULADOR)
     # ---------------------------------------------------------
     
+    # Configuración Gamma V7 (Scalping)
     class GammaConfig:
-        """TrendHunter Gamma V7"""
-        RISK_USD_FIXED = 30.0 # 1.5% de 2000
+        INITIAL_CAPITAL_ALLOCATION = 1000 # Referencia para cálculo proporcional si se requiere
+        RISK_USD_PER_TRADE = 20.0 # O usar % del capital
         
-        G_RSI_PERIOD = 14
-        FILTRO_DIST_FIBO_MAX = 0.008   
-        FILTRO_MACD_MIN = 0.0          
-        HEDGE_DIST_FIBO_MIN = 0.040    
-        HEDGE_MACD_MAX = -0.01         
+        # Filtros
+        RSI_PERIOD = 14
+        FILTRO_DIST_FIBO_MAX = 0.008
+        FILTRO_MACD_MIN = 0.0
+        HEDGE_DIST_FIBO_MIN = 0.012
+        HEDGE_MACD_MAX = -0.01
         
         # Salidas
         TP_NORMAL = 0.035; SL_NORMAL = 0.020
-        TP_HEDGE = 0.045; SL_HEDGE = 0.015
+        TP_HEDGE = 0.045;  SL_HEDGE = 0.015
         
-        # Trailing
-        GAMMA_TRAILING_ENABLED = True
-        GAMMA_TRAILING_DIST_PCT = 0.015       
-        GAMMA_HARD_TP_PCT = 0.05
-        G_TRAIL_NORM = 0.005 
+        # Trailing (Sim Logic)
+        TRAILING_ACTIVATION = 0.015 # 1.5% ganancia para activar
+        TRAILING_OFFSET = 0.005     # 0.5% distancia del precio
 
+    # Configuración Swing V3 (Estructural)
     class SwingConfig:
-        """SwingHunter Alpha V3"""
-        RISK_USD_FIXED = 60.0 # 3% de 2000
+        RISK_USD_PER_TRADE = 30.0
         
+        # Filtros
         FILTRO_DIST_FIBO_MACRO = 0.025
-        SL_INIT_NORMAL = 0.060
+        RSI_MAX_ENTRY = 35 # rsi < 35
         
-        TP1_DIST = 0.06; TP1_QTY = 0.30 
-        TP2_DIST = 0.12; TP2_QTY = 0.30 
+        # Salidas
+        SL_INIT_NORMAL = 0.06
+        TP1_DIST = 0.06; TP1_QTY_PCT = 0.50 # Cerrar 50% al 6%
+        TP2_DIST = 0.12
 
+    # Configuración Shadow V2 (Mean Reversion)
     class ShadowConfig:
-        """ShadowHunter V2"""
-        SH_BASE_UNIT_USD = 200.0 # Tamaño de entrada nominal   
+        BASE_UNIT_USD = 50.0 # Tamaño por entrada
         
-        SH_BB_PERIOD = 20
-        SH_BB_STD_DEV = 2.0
-        SH_MIN_SPACING_ATR = 1.0   
-        SH_TRAILING_PCT = 0.05     
-
-    # --- ALIAS DE COMPATIBILIDAD (CRÍTICO PARA SHOOTER V15) ---
-    # El Shooter busca estas variables en self.cfg.VARIABLE
-    S_TP1_DIST = SwingConfig.TP1_DIST
-    S_TP2_DIST = SwingConfig.TP2_DIST
-    S_TP1_QTY = SwingConfig.TP1_QTY
-    S_TP2_QTY = SwingConfig.TP2_QTY
-
-    # ---------------------------------------------------------
-    # 8. LEGACY
-    # ---------------------------------------------------------
-    class LegacyGammaConfig:
-        RISK_USD_FIXED = 30.0        
-        GAMMA_TRAILING_ENABLED = True
-        GAMMA_TRAILING_DIST_PCT = 0.015       
-        GAMMA_TRAILING_UPDATE_MIN_PCT = 0.002 
-        GAMMA_HARD_TP_PCT = 0.05              
-
-    class LegacySniperConfig:
-        RISK_PER_TRADE = 0.05 
-        STOP_LOSS_PCT = 0.05
-        TP_PLAN = [{'dist': 0.06, 'qty_pct': 0.30, 'move_sl': 'BE'}]
+        # Bollinger
+        BB_PERIOD = 20
+        BB_STD_DEV = 2.0
+        
+        # Grid Logic
+        MIN_SPACING_ATR = 1.0
+        MAX_SLOTS_PER_SIDE = 5
+        
+        # Salidas
+        CASHFLOW_TARGET_PCT = 0.80 # % del ancho de banda
+        SHADOW_TRAILING_PCT = 0.05 # 5% retroceso desde el pico de PnL
 
     # ---------------------------------------------------------
-    # 9. UTILS
+    # 8. UTILIDADES
     # ---------------------------------------------------------
     @classmethod
     def inicializar_infraestructura(cls):
-        directorios = [cls.DIR_LOGS, cls.DIR_DATA, cls.DIR_MAPS]
-        for d in directorios:
+        for d in [cls.DIR_LOGS, cls.DIR_DATA, cls.DIR_MAPS]:
             if not os.path.exists(d):
-                try:
-                    os.makedirs(d)
-                    print(f"📁 Directorio creado: {d}")
-                except Exception as e:
-                    print(f"❌ Error creando directorio {d}: {e}")
-
-    @staticmethod
-    def validar_credenciales():
-        return bool(Config.API_KEY and Config.API_SECRET)
+                os.makedirs(d)

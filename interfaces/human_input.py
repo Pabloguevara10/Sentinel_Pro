@@ -1,17 +1,17 @@
 # =============================================================================
 # UBICACIÓN: interfaces/human_input.py
-# DESCRIPCIÓN: CONSOLA TÁCTICA V15 (MOCKING BRAIN MODE)
+# DESCRIPCIÓN: CONSOLA TÁCTICA V18.0 (GAMMA MANUAL COMMANDER)
 # =============================================================================
 
 import threading
-import time
-from config.config import Config
+import sys
+from config.config import Config 
 
 class HumanInput:
     """
-    INTERFAZ MANUAL DE COMBATE (CLI):
-    Permite inyectar señales 'sintéticas' que imitan al Brain.
-    El Shooter las recibe y las procesa como si fueran automáticas.
+    CONSOLA TÁCTICA V18:
+    - Permite inyección manual de órdenes GAMMA.
+    - Asegura el etiquetado correcto (GAMMA_NORMAL) para aplicar SL del 2%.
     """
     def __init__(self, telegram_bot, comptroller, order_manager, shooter, logger, financials):
         self.tele = telegram_bot
@@ -24,122 +24,107 @@ class HumanInput:
         self.running = True
 
     def iniciar(self):
-        """Arranca el listener de teclado en hilo independiente (Daemon)."""
         self.thread = threading.Thread(target=self._escuchar_teclado, daemon=True)
         self.thread.start()
-        print("⌨️  [COMMANDER] Consola Táctica Lista. Escribe 'help' para comandos.")
+        print("⌨️  [COMMANDER V18] Consola Lista. 'l'=Long, 's'=Short, 'panic'=Cerrar Todo.")
 
     def _escuchar_teclado(self):
-        """Bucle infinito que espera input del usuario sin bloquear al bot."""
         while self.running:
             try:
-                # El input bloquea este hilo, pero no al Main Loop del bot
-                cmd = input() 
-                if cmd.strip():
-                    self._procesar_comando(cmd.strip().lower())
-            except EOFError:
-                break
+                if sys.platform == 'win32': pass 
+                
+                cmd = input().strip().lower()
+                if not cmd: continue
+                self._procesar_comando(cmd)
+            except EOFError: break
             except Exception as e:
-                print(f"❌ Error CLI: {e}")
+                if self.running: print(f"⚠️ Error Input: {e}")
 
     def _procesar_comando(self, cmd):
-        # --- COMANDOS DE INFORMACIÓN ---
-        if cmd == 'help':
-            self._mostrar_ayuda()
-        elif cmd in ['stat', 'status']:
-            self._mostrar_status()
-        elif cmd in ['bal', 'balance']:
-            bal = self.fin.get_balance_total()
-            print(f"💰 Balance Disponible: ${bal:,.2f} USDT")
-
-        # --- COMANDOS DE DISPARO (TRÍADA) ---
-        # Shadow Hunter (La Estrella)
-        elif cmd == 'shl': self._inyectar_senal('SHADOW_HUNTER_V2', 'LONG')
-        elif cmd == 'shs': self._inyectar_senal('SHADOW_HUNTER_V2', 'SHORT')
+        # --- COMANDOS GAMMA V4.6 ---
+        # l/s -> Gamma Normal (SL 2.0%)
+        if cmd == 'l':  self._inyectar_flujo('LONG', 'GAMMA', 'GAMMA_NORMAL')
+        elif cmd == 's': self._inyectar_flujo('SHORT', 'GAMMA', 'GAMMA_NORMAL')
         
-        # Swing (Legacy)
-        elif cmd == 'swl': self._inyectar_senal('TREND_FOLLOWING', 'LONG')
-        elif cmd == 'sws': self._inyectar_senal('TREND_FOLLOWING', 'SHORT')
+        # hl/hs -> Gamma Hedge (SL 1.5% - Sniper Manual)
+        elif cmd == 'hl': self._inyectar_flujo('LONG', 'GAMMA', 'GAMMA_HEDGE')
+        elif cmd == 'hs': self._inyectar_flujo('SHORT', 'GAMMA', 'GAMMA_HEDGE')
         
-        # Gamma (Legacy) - Si quisieras activarlo
-        elif cmd == 'gl': self._inyectar_senal('GAMMA_V7', 'LONG')
-        elif cmd == 'gs': self._inyectar_senal('GAMMA_V7', 'SHORT')
-
-        # --- COMANDOS DE EMERGENCIA ---
-        elif cmd == 'panic':
-            self._protocolo_panico()
-        
+        # --- GESTIÓN ---
+        elif cmd == 'panic': self._protocolo_panico()
+        elif cmd == 'status': self._mostrar_status()
+        elif cmd == 'bal': print(f"💰 Balance: ${self.fin.get_balance_total():.2f}")
+        elif cmd == 'help': self._mostrar_ayuda()
+        elif cmd == 'exit': 
+            print("🛑 Cerrando interfaz manual...")
+            self.running = False
         else:
-            print(f"⚠️ Comando '{cmd}' desconocido. Usa 'help'.")
+            print("❌ Comando desconocido. Usa 'help'.")
 
-    def _inyectar_senal(self, estrategia_key, side):
+    def _inyectar_flujo(self, side, strategy_name, mode_tag):
         """
-        Construye una señal IDÉNTICA a la que generaría el Brain
-        y se la pasa al Shooter.
+        Crea señal sintética para el Shooter.
         """
-        print(f"🧪 Preparando inyección: {estrategia_key} {side}...")
+        print(f"⚡ Iniciando secuencia manual: {strategy_name} [{mode_tag}] ({side})...")
         
-        # 1. Obtener Precio Real (Necesario para el paquete)
         try:
-            precio_actual = self.om.api.get_real_price(Config.SYMBOL)
-            if not precio_actual:
-                print("❌ Error: API no devolvió precio.")
-                return
-        except Exception as e:
-            print(f"❌ Error obteniendo precio: {e}")
-            return
+            precio_ref = self.om.api.get_ticker_price(Config.SYMBOL)
+        except:
+            precio_ref = 0.0
 
-        # 2. Construir Paquete de Señal (MOCKING THE BRAIN)
-        # Esta estructura engaña al Shooter para que crea que es una señal válida
-        fake_signal = {
-            'strategy': estrategia_key, # Clave para que Shooter busque en Config
-            'side': side,
-            'price': precio_actual,
-            'ts': time.time(),
-            'sl_match': None,     # Shadow usa SL% calculado por Shooter
-            'confidence': 'HIGH', # Forzamos confianza alta
-            'origin': 'CLI'       # Marca de agua para logs
+        if precio_ref == 0:
+            print("⚠️ No se pudo obtener precio actual. Intentando a ciegas (Market)...")
+
+        # 1. Crear Señal
+        senal_sintetica = {
+            'timestamp': 0, 
+            'strategy': strategy_name,
+            'signal': side, 
+            'mode': mode_tag, # CRÍTICO: Debe contener 'NORMAL' o 'HEDGE'
+            'confidence': 1.0, 
+            'price': precio_ref
         }
 
-        # 3. Enviar al Shooter
-        print(f"📨 Enviando señal sintética al Shooter @ ${precio_actual}")
-        
-        # AQUÍ ESTÁ LA MAGIA: Usamos el método estándar.
-        # El Shooter hará las validaciones de saldo, overlap y ejecución.
-        resultado = self.shooter.ejecutar_senal(fake_signal)
-        
-        if resultado:
-            print(f"✅ Shooter aceptó la señal.")
-            self.log.registrar_actividad("MANUAL", f"Inyección CLI: {estrategia_key} {side}")
+        # 2. Validación Shooter
+        plan = self.shooter.validar_y_crear_plan(senal_sintetica, self.comp.posiciones_activas)
+
+        if plan:
+            print(f"✅ Shooter Aprobó: {plan['qty']} tokens @ {side}")
+            
+            # 3. Ejecución
+            exito, paquete = self.om.ejecutar_estrategia(plan)
+            
+            if exito and paquete:
+                # 4. Custodia
+                self.comp.aceptar_custodia(paquete)
+                
+                msg = (f"🚀 MANUAL OK: {side} | Entry: {paquete['entry_price']} | SL: {paquete['sl_price']}")
+                print(msg)
+                self.tele.enviar_mensaje(msg)
+                self.log.registrar_actividad("MANUAL", f"Entrada OK: {strategy_name}")
+            else:
+                print("❌ Error en ejecución (API/OM).")
         else:
-            print("⛔ Shooter rechazó la señal (Ver logs para motivo).")
+            print(f"⛔ Shooter RECHAZÓ la señal (Cupos llenos o Riesgo).")
 
     def _protocolo_panico(self):
-        print("\n🚨🚨 INICIANDO PROTOCOLO DE PÁNICO 🚨🚨")
-        print("1. Cancelando todas las órdenes pendientes...")
-        self.om.cancelar_todo()
-        
-        print("2. Cerrando posición a mercado...")
-        self.om.cerrar_posicion(Config.SYMBOL, reason="PANIC_CLI")
-            
-        print("✅ PÁNICO FINALIZADO. Sistema limpio.")
+        print("\n🚨🚨 ALERTA ROJA: PÁNICO ACTIVADO 🚨🚨")
+        self.tele.enviar_mensaje("🚨 EJECUTANDO PROTOCOLO DE PÁNICO MANUAL")
+        self.om.cerrar_posicion(self.om.cfg.SYMBOL, reason="PANIC_CLI")
+        self.comp.posiciones_activas.clear()
+        print("✅ PÁNICO FINALIZADO.")
 
     def _mostrar_status(self):
-        # Asumiendo que Comptroller tiene un método para ver posiciones
-        # Si no, imprime un mensaje genérico
-        try:
-            pos = self.comp.posiciones_activas
-            print(f"\n📊 ESTATUS ACTUAL ({len(pos)} Posiciones)")
-            for pid, p in pos.items():
-                print(f"   🔹 {pid} | {p['side']} | Entry: {p['entry_price']}")
-        except:
-            print("📊 Sin información detallada de posiciones.")
-        print("")
+        self.comp.sincronizar_con_exchange() 
+        print(f"\n📊 ESTATUS ({len(self.comp.posiciones_activas)} Posiciones)")
+        for key, p in self.comp.posiciones_activas.items():
+            print(f"   🔹 {p['symbol']} {p['side']} | Entry: {p['entry_price']} | PnL: {p.get('pnl_pct',0)*100:.2f}% | SL: {p.get('sl_price')}")
 
     def _mostrar_ayuda(self):
-        print("\n🔰 COMANDOS DE COMBATE V8.5 🔰")
-        print(" shl  : Shadow LONG     |  shs  : Shadow SHORT")
-        print(" swl  : Swing LONG      |  sws  : Swing SHORT")
-        print(" stat : Ver Estado      |  bal  : Ver Saldo")
-        print(" panic: 🚨 CERRAR TODO INMEDIATAMENTE")
-        print("---------------------------------------------")
+        print("\n🔰 COMANDOS GAMMA V18 🔰")
+        print(" l      : Gamma Normal LONG  (SL 2.0%)")
+        print(" s      : Gamma Normal SHORT (SL 2.0%)")
+        print(" hl     : Gamma Hedge LONG   (SL 1.5%)")
+        print(" hs     : Gamma Hedge SHORT  (SL 1.5%)")
+        print(" status : Ver posiciones")
+        print(" panic  : ⚠️ CERRAR TODO")

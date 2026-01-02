@@ -1,123 +1,99 @@
-<<<<<<< HEAD
-=======
 # =============================================================================
 # UBICACIÓN: core/financials.py
-# DESCRIPCIÓN: GESTOR FINANCIERO (RESTAURADO V13 COMPATIBLE)
+# DESCRIPCIÓN: GESTOR FINANCIERO V17.6 (SYNC SAFEGUARD)
 # =============================================================================
-
->>>>>>> 4c4d97b (commit 24/12)
-from binance.error import ClientError
 
 class Financials:
     """
-<<<<<<< HEAD
-    DEPARTAMENTO FINANCIERO (V13.6 - RECOVERY FIX):
-    Permite al bot ver las posiciones reales en Binance para no duplicar órdenes.
-=======
-    DEPARTAMENTO FINANCIERO:
-    Encargado de leer Balances y Posiciones.
-    Restaurado a la lógica original de V13.6 que funcionaba correctamente.
->>>>>>> 4c4d97b (commit 24/12)
+    DEPARTAMENTO FINANCIERO V17.6:
+    - Protege el Libro Local contra fallos de lectura de la API.
+    - Si la API falla, confiamos en el OrderManager.
     """
     def __init__(self, config, api_manager):
         self.cfg = config
         self.api = api_manager
+        self.libro_ordenes_local = {} 
+
+    # =========================================================================
+    # GESTIÓN DEL LIBRO LOCAL
+    # =========================================================================
+    
+    def registrar_orden_en_libro(self, order_data):
+        oid = str(order_data['orderId'])
+        self.libro_ordenes_local[oid] = order_data
+
+    def eliminar_orden_del_libro(self, order_id):
+        oid = str(order_id)
+        if oid in self.libro_ordenes_local:
+            del self.libro_ordenes_local[oid]
+
+    def sincronizar_libro_con_api(self):
+        """
+        Intenta descargar la verdad de Binance.
+        CRÍTICO: Si la API falla (None), NO borramos el libro local.
+        """
+        try:
+            raw_orders = self.api.get_open_orders(self.cfg.SYMBOL)
+            
+            # 🛑 SALVAGUARDA: Si recibimos None, la API falló. Abortamos sync.
+            if raw_orders is None:
+                # print("⚠️ Sync omitido: API error (Usando memoria local)")
+                return False
+
+            # Si llegamos aquí, la lectura fue exitosa (aunque sea lista vacía [])
+            nuevo_libro = {}
+            for o in raw_orders:
+                nuevo_libro[str(o['orderId'])] = o
+            
+            self.libro_ordenes_local = nuevo_libro
+            return True
+            
+        except Exception:
+            return False
+
+    def verificar_si_tiene_sl_local(self, side_posicion):
+        target_side = 'SELL' if side_posicion == 'LONG' else 'BUY'
+        tipos_sl = ['STOP_MARKET', 'STOP', 'TRAILING_STOP_MARKET']
+        
+        for oid, order in self.libro_ordenes_local.items():
+            if order['side'] == target_side and order['type'] in tipos_sl:
+                if order.get('positionSide') == side_posicion:
+                    price = float(order.get('stopPrice', 0) or order.get('activationPrice', 0))
+                    return True, price, oid
+        return False, 0.0, None
+
+    # =========================================================================
+    # LECTURAS
+    # =========================================================================
 
     def get_balance_total(self):
-        """Retorna el saldo disponible en USDT."""
         try:
             balances = self.api.client.balance()
             for b in balances:
-                if b['asset'] == 'USDT':
-                    return float(b['balance']) 
+                if b['asset'] == 'USDT': return float(b['balance']) 
             return 0.0
-        except Exception:
-            return 0.0
+        except: return 0.0
 
     def obtener_posiciones_activas_simple(self):
-        """
-<<<<<<< HEAD
-        MÉTODO CRÍTICO: Consulta a Binance qué tenemos abierto realmente.
-        """
         try:
-            # Obtenemos info cruda del API Manager
             raw_pos = self.api.get_position_info(self.cfg.SYMBOL)
-            activas = []
+            if raw_pos is None: return [] # Null safety
             
-            # Normalizamos a lista
+            activas = []
             lista_raw = raw_pos if isinstance(raw_pos, list) else [raw_pos]
             
             for p in lista_raw:
-                amt = float(p['positionAmt'])
+                if p is None: continue
+                amt = float(p.get('positionAmt', 0))
                 if amt != 0:
-                    # Detectamos si es LONG o SHORT
                     side = 'LONG' if amt > 0 else 'SHORT'
-                    
                     activas.append({
                         'symbol': p['symbol'],
                         'side': side,
                         'qty': abs(amt),
                         'entry_price': float(p['entryPrice']),
-                        'pnl': float(p['unRealizedProfit'])
+                        'pnl': float(p['unRealizedProfit']),
+                        'leverage': int(p.get('leverage', 1))
                     })
             return activas
-            
-        except Exception as e:
-            print(f"⚠️ Error crítico en Financials: {e}")
-=======
-        Retorna el saldo disponible en USDT.
-        Usa el método .balance() que es compatible con tu versión de cliente.
-        """
-        try:
-            # RETORNO A LÓGICA ORIGINAL
-            balances = self.api.client.balance()
-            
-            # Validación de seguridad básica
-            if not balances:
-                return 0.0
-
-            for b in balances:
-                if b['asset'] == 'USDT':
-                    return float(b['balance']) 
-            return 0.0
-            
-        except Exception:
-            # Retornar 0 en silencio para no romper el bucle visual
-            return 0.0
-
-    def obtener_posiciones_activas_simple(self):
-        """
-        Consulta posiciones reales abiertas.
-        Mantiene la estructura original que alimentaba correctamente al Dashboard.
-        """
-        try:
-            # Llamada original
-            raw_pos = self.api.get_position_info(self.cfg.SYMBOL)
-            
-            if raw_pos is None: return []
-
-            activas = []
-            # Normalización segura (lista o dict)
-            lista_raw = raw_pos if isinstance(raw_pos, list) else [raw_pos]
-            
-            for p in lista_raw:
-                # Usamos .get() por seguridad, pero mantenemos las claves originales
-                amt = float(p.get('positionAmt', 0))
-                
-                if amt != 0:
-                    side = 'LONG' if amt > 0 else 'SHORT'
-                    
-                    activas.append({
-                        'symbol': p.get('symbol'),
-                        'side': side,
-                        'qty': abs(amt),
-                        'entry_price': float(p.get('entryPrice', 0)),
-                        'pnl': float(p.get('unRealizedProfit', 0)),
-                        # Mantenemos solo los datos que el dashboard V8.4 sabe leer
-                    })
-            return activas
-            
-        except Exception as e:
-            print(f"⚠️ Error en Financials: {e}")
->>>>>>> 4c4d97b (commit 24/12)
-            return []
+        except: return []

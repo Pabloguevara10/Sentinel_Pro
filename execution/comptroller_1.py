@@ -1,225 +1,184 @@
-import time
+# =============================================================================
+# UBICACIÓN: execution/comptroller.py
+# DESCRIPCIÓN: CONTRALOR TRÍADA V17.8 (CUSTODIA ACTIVA + ORDER MANAGER LINK)
+# =============================================================================
+
 from config.config import Config
+# Se asume SystemLogger disponible en logs
+try:
+    from logs.system_logger import SystemLogger
+except ImportError:
+    SystemLogger = None
 
 class Comptroller:
     """
-    CONTRALOR HÍBRIDO (V14.2 - ZERO CRASH FIX):
-    - Custodia de Posiciones.
-    - Adopción de Huérfanos.
-    - Gestión Dual: Trailing (Gamma) y Fraccionada (Swing).
-    - Protección contra errores de división por cero.
+    CONTRALOR V17.8:
+    - Custodia las posiciones abiertas.
+    - Ejecuta Trailing Stop (Gamma).
+    - Ejecuta Tomas Parciales (Swing).
+    - Verifica SL en memoria local (Seguridad).
     """
     def __init__(self, config, order_manager, financials, logger):
         self.cfg = config
         self.om = order_manager
         self.fin = financials
         self.log = logger
-        self.posiciones_activas = {} # { 'AAVEUSDT': { ...datos_plan... } }
+        self.posiciones_activas = {} 
 
     def aceptar_custodia(self, paquete_orden):
-        """
-        Recibe una orden recién ejecutada por el OrderManager y la guarda en memoria.
-        """
+        """Registra la orden recién ejecutada para monitoreo."""
         symbol = paquete_orden['symbol']
-        # Inicializamos banderas de gestión
-        paquete_orden['tp1_hit'] = False
-        paquete_orden['tp2_hit'] = False
-        paquete_orden['max_price'] = paquete_orden['entry_price'] 
         
-        self.posiciones_activas[symbol] = paquete_orden
-        self.log.registrar_actividad("COMPTROLLER", f"🛡️ Custodia iniciada: {symbol}")
+        # Inicializar métricas de monitoreo
+        paquete_orden['max_price'] = paquete_orden['entry_price'] 
+        paquete_orden['min_price'] = paquete_orden['entry_price']
+        paquete_orden['tp1_hit'] = False
+        
+        # Clave única en diccionario local (por Symbol, asumiendo Hedge maneja IDs internos)
+        # Nota: En Hedge Mode puede haber LONG y SHORT a la vez.
+        # Usamos ID único compuesto: SYMBOL_SIDE
+        key = f"{symbol}_{paquete_orden['side']}"
+        self.posiciones_activas[key] = paquete_orden
+        
+        if self.log:
+            self.log.registrar_actividad("COMP", f"🛡️ Custodia iniciada: {key}")
 
-    def auditar_posiciones(self, current_price, rsi_15m=50.0):
+    def auditar_posiciones(self, current_price):
         """
-        Latido cardíaco del bot. Revisa si hay que mover SL, cerrar parciales o cerrar todo.
+        Ciclo principal de revisión. Se llama cada tick (o cada ciclo rápido).
         """
         if not self.posiciones_activas: return
 
-        # Iteramos sobre una copia para poder modificar el diccionario original si es necesario
-        for symbol, pos in list(self.posiciones_activas.items()):
-            
-            # 1. Actualizar Datos de Mercado en la Ficha
+        # Iteramos sobre una copia para poder modificar el dict original
+        for key, pos in list(self.posiciones_activas.items()):
             pos['current_price'] = current_price
-            
-            # Actualizar Pico Máximo (High Watermark) para trailing
-            if pos['side'] == 'LONG':
-                if current_price > pos['max_price']: pos['max_price'] = current_price
-            else:
-                if current_price < pos['max_price']: pos['max_price'] = current_price
-            
-            # 2. Calcular PnL No Realizado (%)
+            side = pos['side']
             entry = float(pos['entry_price'])
             
-            # PROTECCIÓN: Si el precio de entrada es 0 o inválido, saltamos para evitar errores
-            if entry <= 0: continue
+            # 1. Actualizar Picos (High/Low desde entrada)
+            if current_price > pos['max_price']: pos['max_price'] = current_price
+            if current_price < pos['min_price']: pos['min_price'] = current_price
             
-            if pos['side'] == 'LONG':
-                pnl_pct = (current_price - entry) / entry
-            else:
-                pnl_pct = (entry - current_price) / entry
-                
+            # 2. Calcular PnL % Actual
+            if entry > 0:
+                if side == 'LONG': pnl_pct = (current_price - entry) / entry
+                else: pnl_pct = (entry - current_price) / entry
+            else: pnl_pct = 0.0
+            
             pos['pnl_pct'] = pnl_pct
-            
-            # 3. Enrutamiento de Gestión (Router)
-            mgmt_type = pos.get('management_type', 'STATIC')
-            
-            # GESTIÓN GAMMA / RECOVERY (Trailing Stop)
-            if mgmt_type == 'DYNAMIC_TRAILING' or mgmt_type == 'ADOPTED_RECOVERY':
-                self._gestion_dynamic_trailing(pos, current_price, pnl_pct)
-                
-            # GESTIÓN SWING (Parciales + BE)
-            elif mgmt_type == 'FRACTIONAL_SWING':
-                self._gestion_fractional_swing(pos, current_price, pnl_pct)
 
-    def _gestion_dynamic_trailing(self, pos, current_price, pnl_pct):
-        """Lógica Gamma: Trailing Stop agresivo."""
+            # 3. VERIFICACIÓN DE SEGURIDAD (SL EXISTE?)
+            # Usamos Financials para ver si hay SL activo en Binance/Memoria
+            tiene_sl, sl_price_real, _ = self.fin.verificar_si_tiene_sl_local(side)
+            
+            # Sincronizamos nuestro registro con la realidad
+            if tiene_sl:
+                pos['sl_price'] = sl_price_real
+            else:
+                # Si no tiene SL, es crítico (excepto si acabamos de abrir y OM está en ello)
+                # Aquí podríamos poner lógica de emergencia
+                pass
+
+            # 4. GESTIÓN ESTRATÉGICA (ROUTING)
+            strategy = pos.get('strategy', 'MANUAL')
+            
+            if strategy == 'GAMMA':
+                self._gestion_gamma(pos, current_price, pnl_pct)
+            elif strategy == 'SWING':
+                self._gestion_swing(pos, current_price, pnl_pct)
+            elif strategy == 'SHADOW':
+                # Shadow usa lógica compleja de bandas, aquí simplificamos a seguridad
+                # O podríamos implementar trailing básico
+                pass
+            
+            # Verificar si la posición se cerró externamente (limpieza)
+            # Esto se hace idealmente en sincronizar_con_exchange, pero aquí podemos chequear qty
+            # Si qty llega a 0 en memoria, borrar.
+
+    def _gestion_gamma(self, pos, curr, pnl_pct):
+        """Lógica: Trailing Stop Dinámico (Simulador: Activación 1.5%, Dist 0.5%)"""
+        cfg = self.cfg.GammaConfig
         
-        # PROTECCIÓN CRÍTICA: Si el SL es 0 (por fallo de colocación), salimos para no dividir por cero
-        if float(pos.get('sl_price', 0)) <= 0: return
-
-        params = pos.get('params')
-        if not params: params = self.cfg.GammaConfig
-
-        # A. Hard TP Check (Seguridad adicional)
-        tp_hard = pos.get('tp_hard_price', 0)
-        if tp_hard > 0:
-            if (pos['side'] == 'LONG' and current_price >= tp_hard) or \
-               (pos['side'] == 'SHORT' and current_price <= tp_hard):
-                self.log.registrar_actividad("COMPTROLLER", f"💰 Hard TP Gamma alcanzado. Cerrando {pos['symbol']}.")
-                self.om.cerrar_posicion(pos['symbol'], "HARD_TP_GAMMA")
-                if pos['symbol'] in self.posiciones_activas:
-                    del self.posiciones_activas[pos['symbol']]
-                return
-
-        # B. Trailing Logic
-        dist_trail = params.GAMMA_TRAILING_DIST_PCT
-        new_sl = 0.0
-        
-        if pos['side'] == 'LONG':
-            propuesto = current_price * (1 - dist_trail)
-            if propuesto > pos['sl_price']: new_sl = propuesto
-        else:
-            propuesto = current_price * (1 + dist_trail)
-            if propuesto < pos['sl_price']: new_sl = propuesto
-                
-        # Ejecución del movimiento
-        if new_sl > 0:
-            # Doble chequeo anti-cero antes de la división
-            if pos['sl_price'] <= 0: return
-
-            umb_update = getattr(params, 'GAMMA_TRAILING_UPDATE_MIN_PCT', 0.001)
-            diff = abs(new_sl - pos['sl_price']) / pos['sl_price']
+        # Sólo si estamos ganando más que la activación
+        if pnl_pct > cfg.TRAILING_ACTIVATION:
             
-            if diff >= umb_update:
-                exito = self.om.actualizar_stop_loss(pos['symbol'], new_sl)
-                if exito:
-                    pos['sl_price'] = new_sl
+            # Calcular nuevo SL propuesto
+            if pos['side'] == 'LONG':
+                nuevo_sl = curr * (1 - cfg.TRAILING_OFFSET)
+                # Solo actualizar si sube el SL (proteger ganancia)
+                if nuevo_sl > pos['sl_price']:
+                    self._mover_sl(pos, nuevo_sl)
+            else: # SHORT
+                nuevo_sl = curr * (1 + cfg.TRAILING_OFFSET)
+                # Solo actualizar si baja el SL
+                if nuevo_sl < pos['sl_price'] or pos['sl_price'] == 0:
+                     self._mover_sl(pos, nuevo_sl)
 
-    def _gestion_fractional_swing(self, pos, current_price, pnl_pct):
-        """Lógica Swing: Tomas parciales y Protección de Capital."""
-        params = pos.get('params')
-        if not params: return
+    def _gestion_swing(self, pos, curr, pnl_pct):
+        """Lógica: Toma Parcial (TP1) y Break Even."""
+        cfg = self.cfg.SwingConfig
         
-        # 1. TP1 (Primer Objetivo)
-        if not pos['tp1_hit'] and pnl_pct >= params.TP1_DIST:
-            self.log.registrar_actividad("COMPTROLLER", f"⭐ TP1 Swing Alcanzado (+{pnl_pct:.2%}).")
+        # Chequear TP1
+        if not pos['tp1_hit'] and pnl_pct >= cfg.TP1_DIST:
+            # 1. Cerrar Parcial
+            qty_total = float(pos['qty'])
+            qty_close = qty_total * cfg.TP1_QTY_PCT
             
-            qty_to_close = pos['qty'] * params.TP1_QTY 
-            # Reducir posición
-            if self.om.reducir_posicion(pos['symbol'], qty_to_close, "TP1_SWING"):
-                pos['qty'] -= qty_to_close
+            if self.log: self.log.registrar_actividad("COMP", f"⭐ TP1 SWING alcanzado. Cerrando {qty_close:.3f}")
+            
+            if self.om.reducir_posicion(pos['symbol'], qty_close, "TP1_SWING"):
+                pos['qty'] -= qty_close
                 pos['tp1_hit'] = True
                 
-                # Mover a Breakeven
-                buffer = pos['entry_price'] * 0.001 
-                new_sl = pos['entry_price'] + buffer if pos['side'] == 'LONG' else pos['entry_price'] - buffer
-                
-                if self.om.actualizar_stop_loss(pos['symbol'], new_sl):
-                    pos['sl_price'] = new_sl
+                # 2. Mover SL a Break Even (Entrada)
+                self._mover_sl(pos, pos['entry_price'])
 
-        # 2. TP2 (Segundo Objetivo)
-        elif not pos['tp2_hit'] and pnl_pct >= params.TP2_DIST:
-            self.log.registrar_actividad("COMPTROLLER", f"🌟 TP2 Swing Alcanzado (+{pnl_pct:.2%}).")
-            
-            qty_to_close = pos['qty'] * params.TP2_QTY 
-            if self.om.reducir_posicion(pos['symbol'], qty_to_close, "TP2_SWING"):
-                pos['qty'] -= qty_to_close
-                pos['tp2_hit'] = True
-                
-                # Mover SL al nivel del TP1 (Lock Profit)
-                tp1_level = pos['entry_price'] * (1 + params.TP1_DIST) if pos['side'] == 'LONG' \
-                            else pos['entry_price'] * (1 - params.TP1_DIST)
-                
-                if self.om.actualizar_stop_loss(pos['symbol'], tp1_level):
-                    pos['sl_price'] = tp1_level
+    def _mover_sl(self, pos, nuevo_precio):
+        """Wrapper seguro para mover SL a través de OrderManager."""
+        # Filtro de ruido: no mover si la diferencia es mínima (< 0.1%)
+        if abs(nuevo_precio - pos['sl_price']) / pos['sl_price'] < 0.001:
+            return
+
+        exito = self.om.actualizar_stop_loss(pos['symbol'], pos['side'], nuevo_precio)
+        if exito:
+            pos['sl_price'] = nuevo_precio
+            if self.log: self.log.registrar_actividad("COMP", f"🛡️ Trailing/BE ajustado a {nuevo_precio:.2f}")
 
     def sincronizar_con_exchange(self):
         """
-        Sincronización Inteligente:
-        1. Elimina posiciones fantasmas (En memoria pero no en Binance).
-        2. ADOPTA posiciones huérfanas y verifica su protección (SL).
+        Sincroniza la memoria del Comptroller con las posiciones reales reportadas por Financials.
+        Si una posición desaparece de Financials (se cerró), la borramos de aquí.
         """
         try:
-            posiciones_reales = self.fin.obtener_posiciones_activas_simple()
-            simbolos_reales = [p['symbol'] for p in posiciones_reales]
+            real_positions = self.fin.obtener_posiciones_activas_simple()
+            # real_positions es lista de dicts
             
-            # 1. Limpieza (Garbage Collection)
-            for symbol in list(self.posiciones_activas.keys()):
-                if symbol not in simbolos_reales:
-                    self.log.registrar_actividad("COMPTROLLER", f"⚠️ Posición {symbol} cerrada externamente. Limpiando memoria.")
-                    del self.posiciones_activas[symbol]
-
-            # 2. Adopción y Verificación (Protocolo de Seguridad)
-            for p in posiciones_reales:
-                sym = p['symbol']
+            # Crear set de claves reales
+            real_keys = set()
+            for p in real_positions:
+                key = f"{p['symbol']}_{p['side']}"
+                real_keys.add(key)
                 
-                # Si es nueva para el bot (Huérfana)
-                if sym not in self.posiciones_activas:
-                    self.log.registrar_actividad("COMPTROLLER", f"🕵️ Adoptando {sym}. Verificando blindaje...")
-                    
-                    # VERIFICACIÓN DE SL REAL EN BINANCE
-                    tiene_sl_real = False
-                    current_sl_price = 0.0
-                    
-                    try:
-                        open_orders = self.fin.api.client.get_open_orders(symbol=sym)
-                        for o in open_orders:
-                            if o['type'] == 'STOP_MARKET':
-                                tiene_sl_real = True
-                                current_sl_price = float(o['stopPrice'])
-                                break
-                    except Exception as e:
-                        self.log.registrar_error("COMPTROLLER", f"Error verificando SL de {sym}: {e}")
-
-                    # Si no tiene SL, crearlo de EMERGENCIA
-                    if not tiene_sl_real:
-                        self.log.registrar_error("COMPTROLLER", f"⚠️ {sym} está DESPROTEGIDA. Creando SL de Emergencia.")
-                        entry = p['entry_price']
-                        side = p['side']
-                        qty = p['qty']
-                        # SL al 10% de distancia por seguridad
-                        sl_price = entry * 0.9 if side == 'LONG' else entry * 1.1
-                        
-                        # Usamos método interno de OM para colocarlo directo
-                        if self.om._colocar_stop_loss_orden(sym, side, sl_price, qty):
-                            current_sl_price = sl_price
-                            self.log.registrar_actividad("COMPTROLLER", "🛡️ SL de Emergencia colocado.")
-                    
-                    # Registrar en memoria
-                    ficha_adoptada = {
-                        'symbol': sym,
-                        'strategy': 'MANUAL_RECOVERY',
-                        'side': p['side'],
-                        'qty': p['qty'],
-                        'entry_price': p['entry_price'],
-                        'sl_price': current_sl_price,
-                        'current_price': p['entry_price'],
-                        'max_price': p['entry_price'],
-                        'management_type': 'ADOPTED_RECOVERY', # Activa el trailing
-                        'params': self.cfg.GammaConfig
+                # Si no la tenemos en custodia, ADOPTAR (Manual o reinicio)
+                if key not in self.posiciones_activas:
+                    if self.log: self.log.registrar_actividad("COMP", f"🕵️ Adoptando huérfana: {key}")
+                    self.posiciones_activas[key] = {
+                        'symbol': p['symbol'], 'side': p['side'],
+                        'qty': p['qty'], 'entry_price': p['entry_price'],
+                        'max_price': p['entry_price'], 'min_price': p['entry_price'],
+                        'sl_price': 0, 'strategy': 'ADOPTED',
+                        'tp1_hit': False
                     }
-                    self.posiciones_activas[sym] = ficha_adoptada
-                    self.log.registrar_actividad("COMPTROLLER", f"✅ Posición {sym} adoptada y asegurada.")
-                    
+
+            # Limpiar posiciones que ya no existen en el exchange
+            keys_to_delete = []
+            for k in self.posiciones_activas:
+                if k not in real_keys:
+                    keys_to_delete.append(k)
+            
+            for k in keys_to_delete:
+                del self.posiciones_activas[k]
+                if self.log: self.log.registrar_actividad("COMP", f"🏳️ Posición cerrada/liquidada: {k}")
+                
         except Exception as e:
-            self.log.registrar_error("COMPTROLLER", f"Error en Sincronización: {e}")
+            if self.log: self.log.registrar_error("COMP", f"Error Sync: {e}")
