@@ -1,126 +1,134 @@
-2025-12-30 14:00:26,950 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 14:00:26,950 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 14:00:26,950 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 14:00:28,669 | INFO | [API] ✅ Conexión OK.
-2025-12-30 14:00:30,140 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 14:52:22,341 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 14:52:22,342 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 14:52:22,342 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 14:52:23,739 | INFO | [API] ✅ Conexión OK.
-2025-12-30 14:52:25,314 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 14:58:21,890 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 14:58:21,891 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 14:58:21,891 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 14:58:23,233 | INFO | [API] ✅ Conexión OK.
-2025-12-30 14:58:24,816 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 14:59:27,190 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 14:59:27,192 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 14:59:27,192 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 14:59:28,881 | INFO | [API] ✅ Conexión OK.
-2025-12-30 14:59:30,592 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 15:06:37,241 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 15:06:37,241 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 15:06:37,241 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 15:06:39,716 | INFO | [API] ✅ Conexión OK.
-2025-12-30 15:06:41,391 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 16:15:17,872 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 16:15:17,873 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 16:15:17,873 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 16:15:19,205 | INFO | [API] ✅ Conexión OK.
-2025-12-30 16:15:20,848 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 16:16:07,324 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 16:16:07,325 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 16:16:07,325 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 16:16:09,172 | INFO | [API] ✅ Conexión OK.
-2025-12-30 16:16:11,137 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 16:16:11,898 | ERROR | [DATA] ❌ ADVERTENCIA: ⚠️ Dataframes vacíos o incompletos en disco.
-2025-12-30 16:30:31,019 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 16:30:31,020 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 16:30:31,020 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 16:30:33,300 | INFO | [API] ✅ Conexión OK.
-2025-12-30 16:30:35,259 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 20:11:17,326 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 20:11:17,327 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 20:11:17,327 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 20:11:18,682 | INFO | [API] ✅ Conexión OK.
-2025-12-30 20:11:20,719 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 20:12:32,801 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 20:12:32,802 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 20:12:32,802 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 20:12:35,165 | INFO | [API] ✅ Conexión OK.
-2025-12-30 20:12:37,144 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 20:12:38,282 | ERROR | [DATA] ❌ ADVERTENCIA: ⚠️ Dataframes vacíos o incompletos en disco.
-2025-12-30 20:24:43,696 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 20:24:43,696 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 20:24:43,697 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 20:24:45,525 | INFO | [API] ✅ Conexión OK.
-2025-12-30 20:24:47,170 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-30 20:36:51,820 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-30 20:36:51,821 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-30 20:36:51,821 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-30 20:36:54,242 | INFO | [API] ✅ Conexión OK.
-2025-12-30 20:36:56,539 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-31 00:05:37,919 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-31 00:05:37,920 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-31 00:05:37,920 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-31 00:05:39,347 | INFO | [API] ✅ Conexión OK.
-2025-12-31 00:05:40,913 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-31 00:06:58,959 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-31 00:06:58,960 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-31 00:06:58,960 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-31 00:07:00,682 | INFO | [API] ✅ Conexión OK.
-2025-12-31 00:07:02,129 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-31 00:07:02,609 | ERROR | [DATA] ❌ ADVERTENCIA: ⚠️ Dataframes vacíos o incompletos en disco.
-2025-12-31 00:07:16,503 | ERROR | [DATA] ❌ ADVERTENCIA: ⚠️ Dataframes vacíos o incompletos en disco.
-2025-12-31 00:07:30,877 | ERROR | [DATA] ❌ ADVERTENCIA: ⚠️ Dataframes vacíos o incompletos en disco.
-2025-12-31 02:45:06,181 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-31 02:45:06,181 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-31 02:45:06,181 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-31 02:45:08,193 | INFO | [API] ✅ Conexión OK.
-2025-12-31 02:45:10,251 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2025-12-31 03:52:26,564 | INFO | [OM] ⏳ Orden enviada (81688989). Esperando fill...
-2025-12-31 03:52:27,458 | INFO | [OM] ✅ POSICIÓN CONFIRMADA @ 150.1352
-2025-12-31 03:52:27,699 | INFO | [OM] 🛡️ SL Protegido @ 153.22
-2025-12-31 03:52:28,869 | INFO | [COMP] 🛡️ Custodia iniciada: AAVEUSDT_SHORT
-2025-12-31 03:52:28,870 | INFO | [TELEGRAM] Orden Remota OK: SHORT
-2025-12-31 14:28:05,999 | INFO | [OM] ⏳ Orden enviada (81941727). Esperando fill...
-2025-12-31 14:28:06,467 | INFO | [OM] ✅ POSICIÓN CONFIRMADA @ 145.47
-2025-12-31 14:28:06,691 | INFO | [OM] 🛡️ SL Protegido @ 142.56
-2025-12-31 14:28:07,488 | INFO | [COMP] 🛡️ Custodia iniciada: AAVEUSDT_LONG
-2025-12-31 14:28:07,489 | INFO | [TELEGRAM] Orden Remota OK: LONG
-2025-12-31 15:03:02,923 | INFO | [OM] ⏳ Orden enviada (81957816). Esperando fill...
-2025-12-31 15:03:04,492 | INFO | [OM] ✅ POSICIÓN CONFIRMADA @ 144.77
-2025-12-31 15:03:04,726 | INFO | [OM] 🛡️ SL Protegido @ 141.86
-2025-12-31 15:03:05,201 | INFO | [COMP] 🛡️ Custodia iniciada: AAVEUSDT_LONG
-2025-12-31 15:03:05,202 | INFO | [TELEGRAM] Orden Remota OK: LONG
-2025-12-31 15:10:19,768 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2025-12-31 15:10:19,770 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2025-12-31 15:10:19,770 | INFO | [API] 📡 Conectando a TESTNET...
-2025-12-31 15:10:21,669 | INFO | [API] ✅ Conexión OK.
-2025-12-31 15:10:23,459 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2026-01-01 00:55:32,031 | ERROR | [OM] ❌ ADVERTENCIA: ❌ Fallo API Entrada: (400, -1021, "Timestamp for this request was 1000ms ahead of the server's time.", {'Content-Type': 'application/json', 'Content-Length': '88', 'Connection': 'keep-alive', 'Date': 'Thu, 01 Jan 2026 04:55:30 GMT', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Server': 'Bengine', 'x-mbx-used-weight-1m': '-1', 'x-response-time': '2ms', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 3c93de06449f6420eaa84a77e49d81ce.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'MIA50-P7', 'X-Amz-Cf-Id': 'fNWxJxnZbkXmrSmKOG-rGAncdRchfginytWzNth1VdAy1PirypILdw=='})
-2026-01-02 17:10:31,053 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2026-01-02 17:10:31,054 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2026-01-02 17:10:31,054 | INFO | [API] 📡 Conectando a TESTNET...
-2026-01-02 17:10:32,505 | INFO | [API] ✅ Conexión OK.
-2026-01-02 17:10:34,182 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2026-01-02 17:17:27,350 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2026-01-02 17:17:27,351 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2026-01-02 17:17:27,351 | INFO | [API] 📡 Conectando a TESTNET...
-2026-01-02 17:17:28,041 | INFO | [API] ✅ Sincronización de Tiempo OK (Diff: -112ms)
-2026-01-02 17:17:28,293 | ERROR | [API] ❌ ADVERTENCIA: Error config margen: argument of type 'int' is not iterable
-2026-01-02 17:17:29,908 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2026-01-02 17:27:55,832 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2026-01-02 17:27:55,832 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2026-01-02 17:27:56,461 | INFO | [API] Reloj Virtual Sincronizado. Offset: -123ms
-2026-01-02 17:27:58,442 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2026-01-02 17:31:41,988 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2026-01-02 17:31:41,988 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2026-01-02 17:31:43,071 | INFO | [API] Reloj Virtual Sync. Offset: -113ms
-2026-01-02 17:31:45,008 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2026-01-02 18:20:25,983 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2026-01-02 18:20:25,984 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2026-01-02 18:20:30,208 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
-2026-01-02 18:22:18,939 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
-2026-01-02 18:22:18,939 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
-2026-01-02 18:22:22,482 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
+2026-01-07 19:56:49,694 | INFO | [SYSTEM] 🚀 Iniciando SENTINEL PRO (GAMMA V4.6) v18.0-GAMMA-LIVE
+2026-01-07 19:56:49,695 | INFO | [SYSTEM] 🌍 Modo: TESTNET | Par: AAVEUSDT
+2026-01-07 19:56:51,609 | INFO | [API] Conexión Exitosa y Sincronizada.
+2026-01-07 19:56:51,609 | INFO | [MAIN] ⏳ Sincronizando datos históricos iniciales...
+2026-01-07 19:56:53,772 | INFO | [MAIN] 🔎 Buscando posiciones huérfanas en Binance para adoptar...
+2026-01-07 19:56:54,023 | INFO | [SYSTEM] ✅ Sistema Operativo. Entrando en Bucle Principal.
+2026-01-08 02:09:39,461 | INFO | [OM] ⏳ Orden enviada (86190200). Esperando fill...
+2026-01-08 02:09:39,976 | INFO | [OM] ✅ POSICIÓN CONFIRMADA @ 166.02
+2026-01-08 02:09:40,682 | INFO | [OM] 🛡️ SL Protegido @ 162.7
+2026-01-08 02:09:40,687 | INFO | [OM] ⚙️ Configurando 2 TPs...
+2026-01-08 02:09:40,965 | INFO | [OM] 💎 TP TP1 Colocado: 3.8 @ 171.8307
+2026-01-08 02:09:41,260 | INFO | [OM] 💎 TP TP2 Colocado: 2.9 @ 173.4909
+2026-01-08 02:09:41,304 | INFO | [COMP] 🛡️ Custodia iniciada: AAVEUSDT_LONG
+2026-01-08 02:09:41,321 | INFO | [TELEGRAM] Orden Remota OK: LONG
+2026-01-08 02:31:31,358 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.49%
+2026-01-08 02:32:07,587 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.49%
+2026-01-08 02:32:41,046 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.43%
+2026-01-08 02:33:14,957 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.49%
+2026-01-08 02:33:50,785 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.43%
+2026-01-08 02:34:25,078 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.40%
+2026-01-08 02:35:03,330 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.41%
+2026-01-08 02:35:44,984 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.37%
+2026-01-08 02:36:24,604 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.40%
+2026-01-08 02:36:47,548 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.40%
+2026-01-08 02:37:29,098 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.55%
+2026-01-08 02:37:52,322 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.55%
+2026-01-08 02:38:17,201 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.55%
+2026-01-08 02:39:00,364 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.34%
+2026-01-08 02:39:23,827 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.34%
+2026-01-08 02:39:47,070 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.34%
+2026-01-08 02:40:32,925 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.30%
+2026-01-08 02:41:11,565 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.39%
+2026-01-08 02:41:32,817 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.39%
+2026-01-08 02:41:56,750 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.39%
+2026-01-08 02:42:33,999 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.31%
+2026-01-08 02:42:58,056 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.31%
+2026-01-08 02:43:23,868 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.31%
+2026-01-08 02:44:04,119 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.32%
+2026-01-08 02:44:25,815 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.32%
+2026-01-08 02:45:07,103 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.39%
+2026-01-08 02:45:29,657 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.39%
+2026-01-08 02:46:12,077 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.45%
+2026-01-08 02:46:38,675 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.45%
+2026-01-08 02:47:19,385 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.46%
+2026-01-08 02:47:58,108 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.51%
+2026-01-08 02:48:24,780 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.51%
+2026-01-08 02:49:04,586 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.58%
+2026-01-08 02:49:45,215 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.58%
+2026-01-08 02:50:11,110 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.58%
+2026-01-08 02:50:34,928 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.58%
+2026-01-08 02:51:15,887 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.70%
+2026-01-08 02:51:57,613 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.72%
+2026-01-08 02:52:38,963 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.70%
+2026-01-08 02:53:18,205 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.61%
+2026-01-08 02:53:45,187 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.61%
+2026-01-08 02:54:21,728 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.68%
+2026-01-08 02:55:03,218 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.83%
+2026-01-08 02:55:30,040 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.83%
+2026-01-08 02:55:53,960 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.83%
+2026-01-08 02:56:36,329 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.81%
+2026-01-08 02:57:02,622 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.81%
+2026-01-08 02:57:26,378 | INFO | [SHOOTER] ⛔ Rechazado: Re-entrada prematura. PnL: -0.81%
+2026-01-08 09:49:58,676 | INFO | [MAIN] ⚡ SEÑAL APROBADA: GAMMA (SHORT)
+2026-01-08 09:49:59,671 | ERROR | [EVAL] ❌ ADVERTENCIA: Error registrando entrada: 'id'
+2026-01-08 09:49:59,995 | INFO | [OM] ⏳ Orden enviada (86379699). Esperando fill...
+2026-01-08 09:50:18,835 | ERROR | [OM] ❌ ADVERTENCIA: ⚠️ Posición no detectada tras orden. Cancelando...
+2026-01-08 10:00:38,979 | INFO | [SHOOTER] ✅ Re-entrada Aprobada: Precio en contra -2.40% (> 1.2%).
+2026-01-08 10:00:39,731 | INFO | [MAIN] ⚡ SEÑAL APROBADA: GAMMA (LONG)
+2026-01-08 10:00:40,605 | ERROR | [EVAL] ❌ ADVERTENCIA: Error registrando entrada: 'id'
+2026-01-08 10:00:40,938 | INFO | [OM] ⏳ Orden enviada (86382944). Esperando fill...
+2026-01-08 10:00:41,458 | INFO | [OM] ✅ POSICIÓN CONFIRMADA @ 162.01
+2026-01-08 10:00:41,742 | INFO | [OM] 🛡️ SL Protegido @ 158.79
+2026-01-08 10:00:41,743 | INFO | [OM] ⚙️ Configurando 2 TPs...
+2026-01-08 10:00:42,042 | INFO | [OM] 💎 TP TP1 Colocado: 3.9 @ 167.70104999999998
+2026-01-08 10:00:42,344 | INFO | [OM] 💎 TP TP2 Colocado: 2.9 @ 169.32135
+2026-01-08 10:00:42,353 | INFO | [COMP] 🛡️ Custodia iniciada: AAVEUSDT_LONG
+2026-01-08 10:00:43,236 | INFO | [MAIN] 🚀 ORDEN CONFIRMADA: GAMMA @ 162.01
+2026-01-08 10:02:36,938 | INFO | [MAIN] ⚡ SEÑAL APROBADA: GAMMA (SHORT)
+2026-01-08 10:02:37,800 | ERROR | [EVAL] ❌ ADVERTENCIA: Error registrando entrada: 'id'
+2026-01-08 10:02:38,119 | INFO | [OM] ⏳ Orden enviada (86383723). Esperando fill...
+2026-01-08 10:02:56,790 | ERROR | [OM] ❌ ADVERTENCIA: ⚠️ Posición no detectada tras orden. Cancelando...
+2026-01-08 10:27:16,726 | INFO | [MAIN] ⚡ SEÑAL APROBADA: GAMMA (SHORT)
+2026-01-08 10:27:17,678 | ERROR | [EVAL] ❌ ADVERTENCIA: Error registrando entrada: 'id'
+2026-01-08 10:27:17,987 | INFO | [OM] ⏳ Orden enviada (86390870). Esperando fill...
+2026-01-08 10:27:35,023 | ERROR | [OM] ❌ ADVERTENCIA: ⚠️ Posición no detectada tras orden. Cancelando...
+2026-01-08 10:46:03,353 | INFO | [MAIN] ⚡ SEÑAL APROBADA: GAMMA (SHORT)
+2026-01-08 10:46:04,352 | ERROR | [EVAL] ❌ ADVERTENCIA: Error registrando entrada: 'id'
+2026-01-08 10:46:04,667 | INFO | [OM] ⏳ Orden enviada (86397021). Esperando fill...
+2026-01-08 10:46:22,557 | ERROR | [OM] ❌ ADVERTENCIA: ⚠️ Posición no detectada tras orden. Cancelando...
+2026-01-08 11:30:34,112 | INFO | [COMP] 🔓 Break Even Activado (+0.5% Asegurado)
+2026-01-08 11:32:16,338 | INFO | [OM] 🛡️ SL Protegido @ 162.91
+2026-01-08 11:32:19,523 | INFO | [OM] 🛡️ SL Protegido @ 162.91
+2026-01-08 11:42:30,149 | INFO | [OM] 🛡️ SL Protegido @ 163.08
+2026-01-08 11:42:32,532 | INFO | [OM] 🛡️ SL Protegido @ 163.08
+2026-01-08 11:44:00,084 | INFO | [OM] 🛡️ SL Protegido @ 163.25
+2026-01-08 11:44:02,425 | INFO | [OM] 🛡️ SL Protegido @ 163.25
+2026-01-08 11:53:37,204 | INFO | [OM] 🛡️ SL Protegido @ 163.42
+2026-01-08 11:53:39,513 | INFO | [OM] 🛡️ SL Protegido @ 163.42
+2026-01-08 11:59:07,290 | INFO | [OM] 🛡️ SL Protegido @ 163.59
+2026-01-08 11:59:09,556 | INFO | [OM] 🛡️ SL Protegido @ 163.59
+2026-01-08 12:00:23,914 | INFO | [OM] 🛡️ SL Protegido @ 163.79
+2026-01-08 12:00:26,197 | INFO | [OM] 🛡️ SL Protegido @ 163.79
+2026-01-08 12:01:22,772 | INFO | [OM] 🛡️ SL Protegido @ 163.97
+2026-01-08 12:01:24,688 | INFO | [OM] 🛡️ SL Protegido @ 163.99
+2026-01-08 12:02:09,393 | INFO | [OM] 🛡️ SL Protegido @ 164.14
+2026-01-08 12:02:16,805 | INFO | [OM] 🛡️ SL Protegido @ 164.17
+2026-01-08 12:16:16,098 | INFO | [MAIN] ⚡ SEÑAL APROBADA: GAMMA (SHORT)
+2026-01-08 12:16:17,012 | ERROR | [EVAL] ❌ ADVERTENCIA: Error registrando entrada: 'id'
+2026-01-08 12:16:17,746 | INFO | [OM] ⏳ Orden enviada (86427207). Esperando fill...
+2026-01-08 12:16:35,960 | ERROR | [OM] ❌ ADVERTENCIA: ⚠️ Posición no detectada tras orden. Cancelando...
+2026-01-08 12:30:41,020 | INFO | [MAIN] ⚡ SEÑAL APROBADA: GAMMA (SHORT)
+2026-01-08 12:30:41,869 | ERROR | [EVAL] ❌ ADVERTENCIA: Error registrando entrada: 'id'
+2026-01-08 12:30:42,162 | INFO | [OM] ⏳ Orden enviada (86431548). Esperando fill...
+2026-01-08 12:31:01,257 | ERROR | [OM] ❌ ADVERTENCIA: ⚠️ Posición no detectada tras orden. Cancelando...
+2026-01-08 12:45:46,996 | INFO | [MAIN] ⚡ SEÑAL APROBADA: GAMMA (SHORT)
+2026-01-08 12:45:47,851 | ERROR | [EVAL] ❌ ADVERTENCIA: Error registrando entrada: 'id'
+2026-01-08 12:45:48,281 | INFO | [OM] ⏳ Orden enviada (86435730). Esperando fill...
+2026-01-08 12:46:07,055 | ERROR | [OM] ❌ ADVERTENCIA: ⚠️ Posición no detectada tras orden. Cancelando...
+2026-01-08 12:48:45,882 | INFO | [OM] 🛡️ SL Protegido @ 164.34
+2026-01-08 12:48:47,744 | INFO | [OM] 🛡️ SL Protegido @ 164.34
+2026-01-08 12:49:32,260 | INFO | [OM] 🛡️ SL Protegido @ 164.54
+2026-01-08 12:49:34,894 | INFO | [OM] 🛡️ SL Protegido @ 164.54
+2026-01-08 12:59:47,475 | INFO | [OM] 🛡️ SL Protegido @ 164.71
+2026-01-08 12:59:49,420 | INFO | [OM] 🛡️ SL Protegido @ 164.71
+2026-01-08 13:01:19,111 | INFO | [MAIN] ⚡ SEÑAL APROBADA: GAMMA (SHORT)
+2026-01-08 13:01:20,214 | ERROR | [EVAL] ❌ ADVERTENCIA: Error registrando entrada: 'id'
+2026-01-08 13:01:20,943 | INFO | [OM] ⏳ Orden enviada (86440802). Esperando fill...
+2026-01-08 13:01:40,945 | ERROR | [OM] ❌ ADVERTENCIA: ⚠️ Posición no detectada tras orden. Cancelando...
+2026-01-08 13:02:04,237 | INFO | [OM] 🛡️ SL Protegido @ 164.9
+2026-01-08 13:02:06,324 | INFO | [OM] 🛡️ SL Protegido @ 164.9
+2026-01-08 13:03:29,661 | INFO | [OM] 🛡️ SL Protegido @ 165.1
+2026-01-08 13:03:31,541 | INFO | [OM] 🛡️ SL Protegido @ 165.1
+2026-01-08 13:06:54,947 | INFO | [OM] 🛡️ SL Protegido @ 165.28
+2026-01-08 13:06:56,843 | INFO | [OM] 🛡️ SL Protegido @ 165.28

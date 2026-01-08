@@ -1,184 +1,169 @@
+# =============================================================================
+# NOMBRE: manual_tester.py
+# VERSIÓN: 3.1 (HEDGE MODE PATCH)
+# DESCRIPCIÓN: Probador con corrección de parámetros para Hedge Mode.
+# =============================================================================
+
 import time
 import os
 import sys
+import logging
+from datetime import datetime
 
-# Aseguramos que Python encuentre las carpetas del proyecto
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config.config import Config
 from connections.api_manager import APIManager
 from execution.order_manager import OrderManager
-<<<<<<< HEAD
-# Eliminamos la línea de SystemLogger que causaba el error
 from core.financials import Financials 
 
-# Configuración Fake para Logger (Para que no falle si falta el real)
-class DummyLogger:
-    def registrar_actividad(self, mod, msg): print(f"✅ [{mod}] {msg}")
-    def registrar_error(self, mod, msg, critico=False): print(f"❌ [{mod}] {msg}")
-    def advertencia(self, msg): print(f"⚠️ {msg}")
+class ForensicLogger:
+    def __init__(self, filename="manual_session.log"):
+        self.logger = logging.getLogger("TESTER")
+        self.logger.setLevel(logging.INFO)
+        self.logger.handlers = [] 
+        formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+        file_handler = logging.FileHandler(filename, mode='a', encoding='utf-8')
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)
+
+    def registrar_actividad(self, mod, msg): self.logger.info(f"[{mod}] {msg}")
+    def registrar_error(self, mod, msg): self.logger.error(f"[{mod}] {msg}")
 
 def main():
-    print("==========================================")
-    print("🛡️ PROTOCOLO DE VALIDACIÓN MANUAL (HEDGE) 🛡️")
-    print("==========================================")
-=======
-from core.financials import Financials 
-
-# Configuración Fake para Logger (Para que funcione independiente del Main)
-class DummyLogger:
-    def registrar_actividad(self, mod, msg): print(f"ℹ️ [{mod}] {msg}")
-    def registrar_error(self, mod, msg, critico=False): print(f"❌ [{mod}] {msg}")
-    def advertencia(self, msg): print(f"⚠️ {msg}")
-    # Alias para compatibilidad con OrderManager V15
-    def log_info(self, msg): self.registrar_actividad("TESTER", msg)
-    def log_error(self, msg): self.registrar_error("TESTER", msg)
-
-def main():
-    print("\n==========================================")
-    print("🛡️ PROTOCOLO DE DISPARO MANUAL (TESTER) 🛡️")
-    print("==========================================")
-    print(f"Modo: {Config.SYSTEM_MODE}")
-    print(f"Símbolo: {Config.SYMBOL}")
-    print(f"Cantidad Mínima Configurada: {Config.MIN_QTY} AAVE")
->>>>>>> 4c4d97b (commit 24/12)
-    
-    logger = DummyLogger()
+    logger = ForensicLogger()
+    logger.registrar_actividad("INIT", "="*50)
+    logger.registrar_actividad("INIT", "🛡️ CONSOLA DE DIAGNÓSTICO V3.1 (HEDGE PATCH) 🛡️")
     
     try:
-<<<<<<< HEAD
-        # Inicializamos los módulos
         api = APIManager(logger)
-        
-        # Intentamos cargar Financials, si falla, usamos saldo dummy
-        try:
-            fin = Financials(Config, api)
-            saldo = fin.get_balance_total()
-        except:
-            saldo = "No disponible"
-            
-        om = OrderManager(Config, api, logger)
-        
-        print(f"\n📡 Conexión establecida. Saldo: {saldo}")
-        
-        while True:
-            print("\n------------------------------------------")
-            print("OPCIONES:")
-            print(" [L] Abrir LONG (0.1 AAVE) + SL")
-            print(" [S] Abrir SHORT (0.1 AAVE) + SL")
-            print(" [C] CERRAR TODO (Pánico)")
-=======
-        # 1. Inicializamos conexiones
-        print("\n⏳ Conectando a Binance...")
-        api = APIManager(logger)
-        
-        # 2. Inicializamos Finanzas (Para ver saldo real)
         fin = Financials(Config, api)
-        saldo = fin.get_balance_total()
-        print(f"💰 Saldo Futuros Detectado: ${saldo:.2f} USDT")
-        
-        # 3. Inicializamos el Gestor de Órdenes
-        om = OrderManager(Config, api, logger)
-        
-        while True:
-            print("\n------------------------------------------")
-            print("OPCIONES DE PRUEBA:")
-            print(" [L] LONG de Prueba (Mínimo Lotaje)")
-            print(" [S] SHORT de Prueba (Mínimo Lotaje)")
-            print(" [C] CERRAR Posición (Market)")
->>>>>>> 4c4d97b (commit 24/12)
-            print(" [X] Salir")
-            
-            choice = input("\n👉 Comando: ").upper().strip()
-            
-            if choice == 'X': break
-            
-            if choice == 'L' or choice == 'S':
-                side = 'LONG' if choice == 'L' else 'SHORT'
-                
-<<<<<<< HEAD
-                # Obtenemos precio actual
-=======
-                # A. Obtener precio real
->>>>>>> 4c4d97b (commit 24/12)
-                current_price = api.get_ticker_price(Config.SYMBOL)
-                if current_price == 0:
-                    print("❌ Error: No se pudo obtener precio de mercado.")
-                    continue
-
-<<<<<<< HEAD
-                # Definir SL al 1% de distancia
-                if side == 'LONG': sl_price = current_price * 0.99
-                else: sl_price = current_price * 1.01
-                
-                plan = {
-                    'symbol': Config.SYMBOL,
-                    'side': side,
-                    'qty': 0.1, # Cantidad mínima
-                    'entry_price': current_price,
-                    'sl_price': sl_price
-                }
-                
-                print(f"\n🚀 EJECUTANDO TEST {side}...")
-                print(f"   Precio Entrada: {current_price}")
-                print(f"   SL Objetivo: {sl_price:.2f}")
-                
-                # Ejecutamos la orden usando tu OrderManager
-                exito, res = om.ejecutar_estrategia(plan)
-                
-                if exito:
-                    print("\n✨ RESULTADO: ¡EXITOSO!")
-                    print("⚠️ IMPORTANTE: Ve a la App de Binance AHORA y verifica:")
-                    print("   1. ¿Hay una Posición Abierta?")
-                    print("   2. ¿Hay una Orden Pendiente (STOP MARKET)?")
-                else:
-                    print("\n💀 RESULTADO: FALLIDO. Revisa el error arriba.")
-
-            elif choice == 'C':
-                print("\n🧹 Cerrando todo...")
-                om.cerrar_posicion(Config.SYMBOL, "MANUAL_TEST")
-=======
-                # B. Definir SL de seguridad (1%)
-                if side == 'LONG': sl_price = current_price * 0.99
-                else: sl_price = current_price * 1.01
-                
-                # C. Crear Plan con MÍNIMA PORCIÓN
-                plan = {
-                    'symbol': Config.SYMBOL,
-                    'side': side,
-                    'qty': Config.MIN_QTY, # <--- USA LA CANTIDAD MÍNIMA DEL CONFIG
-                    'entry_price': current_price,
-                    'sl_price': sl_price,
-                    'strategy': 'MANUAL_TEST',
-                    'management_type': 'STATIC'
-                }
-                
-                print(f"\n🚀 EJECUTANDO ORDEN {side}...")
-                print(f"   Precio: ${current_price}")
-                print(f"   Cantidad: {plan['qty']} AAVE")
-                print(f"   Stop Loss: ${sl_price:.2f}")
-                
-                # D. Ejecutar usando el OrderManager real del bot
-                exito, res = om.ejecutar_estrategia(plan)
-                
-                if exito:
-                    print("\n✅ ¡ÉXITO! ORDEN COLOCADA EN BINANCE.")
-                    print("---------------------------------------")
-                    print("👀 Ve a la App de Binance y verifica:")
-                    print("   1. Posición Abierta (Pestaña Posiciones).")
-                    print("   2. Stop Loss Pendiente (Pestaña Órdenes Abiertas).")
-                else:
-                    print("\n❌ FALLO. El OrderManager rechazó la orden o Binance dio error.")
-
-            elif choice == 'C':
-                print(f"\n🧹 Cerrando posición de {Config.SYMBOL}...")
-                om.cerrar_posicion(Config.SYMBOL, "MANUAL_TEST_CLOSE")
->>>>>>> 4c4d97b (commit 24/12)
-
+        om = OrderManager(Config, api, logger, fin)
+        symbol = Config.SYMBOL
+        logger.registrar_actividad("CALIB", f"Par: {symbol} | Qty Prec: {om.qty_precision} | Price Prec: {om.price_precision}")
     except Exception as e:
-        print(f"\n💥 CRASH: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.registrar_error("INIT", f"Error crítico: {e}")
+        return
+
+    while True:
+        print("\n" + "="*40)
+        print(f"   MANDO MANUAL - {symbol} (HEDGE)")
+        print("="*40)
+        print("1. 📊 Estado")
+        print("2. ⚡ Abrir Posición (MARKET)")
+        print("3. 🛡️ Actualizar SL")
+        print("4. 🗑️ Cancelar ID")
+        print("5. 📚 Libro Local")
+        print("6. 🚨 PÁNICO")
+        print("7. 🎯 INYECTAR T/P (HEDGE MODE FIX)")
+        print("Q. 🚪 Salir")
+        
+        op = input("\n>> ").strip().upper()
+        
+        if op == '1':
+            price = api.get_ticker_price(symbol)
+            pos = om._leer_datos_posicion(symbol)
+            logger.registrar_actividad("STATUS", f"Precio: {price}")
+            if pos and float(pos['positionAmt']) != 0:
+                logger.registrar_actividad("STATUS", f"POSICIÓN: {pos['side']} | Amt: {pos['positionAmt']} | Entry: {pos['entryPrice']}")
+            else: logger.registrar_actividad("STATUS", "Sin posición.")
+
+        elif op == '2':
+            side_in = input("Lado (L=Long / S=Short)? ").upper()
+            usd_in = input("Cantidad USDT? ")
+            try:
+                side = 'LONG' if side_in == 'L' else 'SHORT'
+                margin = float(usd_in)
+                price = api.get_ticker_price(symbol)
+                qty = (margin * Config.LEVERAGE) / price
+                logger.registrar_actividad("CMD", f"Abriendo {side} (${margin})...")
+                
+                plan = {
+                    'symbol': symbol, 'strategy': 'MANUAL', 'side': side,
+                    'qty': qty, 'entry_price': price, 'execution_type': 'MARKET',
+                    'sl_price': price * 0.98 if side == 'LONG' else price * 1.02
+                }
+                ok, pack = om.ejecutar_estrategia(plan)
+                if ok: logger.registrar_actividad("CMD", "✅ Ejecución OK")
+                else: logger.registrar_error("CMD", "❌ Fallo Apertura")
+            except Exception as e: logger.registrar_error("CMD", f"Error: {e}")
+
+        elif op == '3':
+            new_sl = input("Nuevo SL: ")
+            try:
+                pos = om._leer_datos_posicion(symbol)
+                if pos and float(pos['positionAmt']) != 0:
+                    side = 'LONG' if float(pos['positionAmt']) > 0 else 'SHORT'
+                    res = om.actualizar_stop_loss(symbol, side, float(new_sl))
+                    if res: logger.registrar_actividad("CMD", f"✅ SL OK: {res}")
+                else: print("❌ Sin posición.")
+            except Exception: pass
+
+        elif op == '4':
+            oid = input("ID: ")
+            om.cancelar_orden_especifica(symbol, oid)
+
+        elif op == '5':
+            print(list(om.consultar_libro_local().keys()))
+
+        elif op == '6': om.cerrar_posicion(symbol, "MANUAL")
+
+        elif op == '7':
+            logger.registrar_actividad("TP_TEST", "Protocolo T/P HEDGE MODE...")
+            pos = om._leer_datos_posicion(symbol)
+            if not pos or float(pos['positionAmt']) == 0:
+                logger.registrar_error("TP_TEST", "❌ Abre una posición primero.")
+                continue
+                
+            amt = float(pos['positionAmt'])
+            side = 'LONG' if amt > 0 else 'SHORT'
+            qty_total = abs(amt)
+            
+            logger.registrar_actividad("TP_TEST", f"Detectado: {side} | Total: {qty_total}")
+            p1 = input("Precio TP1 (40%): ")
+            p2 = input("Precio TP2 (30%) [Enter omitir]: ")
+            
+            # Cálculo Blindado
+            q1 = om._blindar_float(qty_total * 0.40, om.qty_precision)
+            
+            try:
+                # --- TP1 CON PARCHE HEDGE ---
+                logger.registrar_actividad("TP_TEST", f"Enviando TP1: {q1} @ {p1}...")
+                pl1 = om.director.construir_take_profit_limit(symbol, side, q1, float(p1))
+                
+                # PARCHE: Eliminar reduceOnly y asegurar positionSide
+                if 'reduceOnly' in pl1: del pl1['reduceOnly']
+                pl1['positionSide'] = side # 'LONG' o 'SHORT'
+                
+                ok1, res1 = api.execute_generic_order(pl1)
+                if ok1: 
+                    logger.registrar_actividad("TP_TEST", f"✅ TP1 ACEPTADO ID: {res1['orderId']}")
+                    fin.registrar_orden_en_libro(res1)
+                else: 
+                    logger.registrar_error("TP_TEST", f"❌ RECHAZO TP1: {res1}")
+
+                # --- TP2 CON PARCHE HEDGE ---
+                if p2.strip():
+                    q2 = om._blindar_float(qty_total * 0.30, om.qty_precision)
+                    logger.registrar_actividad("TP_TEST", f"Enviando TP2: {q2} @ {p2}...")
+                    pl2 = om.director.construir_take_profit_limit(symbol, side, q2, float(p2))
+                    
+                    if 'reduceOnly' in pl2: del pl2['reduceOnly']
+                    pl2['positionSide'] = side
+                    
+                    ok2, res2 = api.execute_generic_order(pl2)
+                    if ok2: 
+                        logger.registrar_actividad("TP_TEST", f"✅ TP2 ACEPTADO ID: {res2['orderId']}")
+                        fin.registrar_orden_en_libro(res2)
+                    else: 
+                        logger.registrar_error("TP_TEST", f"❌ RECHAZO TP2: {res2}")
+                        
+            except Exception as e: logger.registrar_error("TP_TEST", f"Excepción: {e}")
+
+        elif op == 'Q': break
 
 if __name__ == "__main__":
     main()

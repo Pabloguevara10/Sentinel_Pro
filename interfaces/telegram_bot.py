@@ -1,6 +1,6 @@
 # =============================================================================
 # UBICACIÓN: interfaces/telegram_bot.py
-# DESCRIPCIÓN: TELEGRAM BOT V18.0 (GAMMA REMOTE CONTROL)
+# DESCRIPCIÓN: TELEGRAM BOT V19.0 (CON REPORTE DE INTENCIÓN DETALLADO)
 # =============================================================================
 
 import threading
@@ -10,9 +10,10 @@ from config.config import Config
 
 class TelegramBot:
     """
-    COMANDANTE TELEGRAM V18:
+    COMANDANTE TELEGRAM V19:
     - Control Remoto para Gamma V4.6.
-    - Reporta Hard Orders (SL/TPs) en tiempo real.
+    - Reporte de Intención de Entrada (Pre-Trade).
+    - Reporte de Ejecución y Pánico.
     """
     def __init__(self, config, shooter, comptroller, order_manager, logger, financials):
         self.cfg = config
@@ -44,6 +45,50 @@ class TelegramBot:
             requests.post(url, data=data, timeout=5)
         except Exception as e:
             self.log.registrar_error("TELEGRAM", f"Fallo envío: {e}")
+
+    # --- NUEVA FUNCIÓN DE REPORTE DE INTENCIÓN ---
+    def reportar_intencion_entrada(self, plan):
+        """
+        Envía un reporte detallado con los parámetros calculados por Shooter
+        ANTES de que la orden sea ejecutada en Binance.
+        """
+        if not self.running: return
+        
+        try:
+            side = plan.get('side', 'UNKNOWN')
+            strat = plan.get('strategy', 'UNKNOWN')
+            entry = float(plan.get('entry_price', 0))
+            sl = float(plan.get('sl_price', 0))
+            
+            # Extraer TPs de la lista dinámica
+            tp1 = "N/A"
+            tp2 = "N/A"
+            
+            if 'tp_map' in plan:
+                for tp in plan['tp_map']:
+                    if tp.get('id') == 'TP1': tp1 = f"{tp['price_target']:.2f}"
+                    if tp.get('id') == 'TP2': tp2 = f"{tp['price_target']:.2f}"
+            
+            # Calcular % de Riesgo para contexto visual
+            sl_pct = 0
+            if entry > 0:
+                if side == 'LONG': sl_pct = (entry - sl) / entry * 100
+                else: sl_pct = (sl - entry) / entry * 100
+                
+            emoji = "📈" if side == 'LONG' else "📉"
+            
+            msg = (
+                f"⚡ **AUTORIZACIÓN {strat}**\n"
+                f"{emoji} **{side}** @ {entry:.2f}\n"
+                f"🛡️ **S/L:** {sl:.2f} ({sl_pct:.2f}%)\n"
+                f"🎯 **TP1:** {tp1}\n"
+                f"🎯 **TP2:** {tp2}\n"
+                f"_⏳ Enviando orden a Binance..._"
+            )
+            self.enviar_mensaje(msg)
+            
+        except Exception as e:
+            self.log.registrar_error("TELEGRAM", f"Error armando reporte intención: {e}")
 
     def _poll_updates(self):
         offset = 0
@@ -81,35 +126,27 @@ class TelegramBot:
     def _inyectar_senal(self, side, strategy_name, mode_tag):
         self.enviar_mensaje(f"⚡ Procesando **{side}** ({mode_tag})...")
         
-        # 1. Precio Ref
         try: price = self.om.api.get_ticker_price(self.cfg.SYMBOL)
         except: price = 0
         
-        # 2. Señal
         senal = {
             'timestamp': 0, 'strategy': strategy_name,
             'signal': side, 'mode': mode_tag,
             'confidence': 1.0, 'price': price
         }
         
-        # 3. Validación
         plan = self.shooter.validar_y_crear_plan(senal, self.comp.posiciones_activas)
         
         if plan:
-            # 4. Ejecución
+            # Reportamos intención también en manual
+            self.reportar_intencion_entrada(plan)
+            
             exito, paquete = self.om.ejecutar_estrategia(plan)
             
             if exito and paquete:
                 self.comp.aceptar_custodia(paquete)
                 self.log.registrar_actividad("TELEGRAM", f"Orden Remota OK: {side}")
-                # El reporte detallado se maneja en el OrderManager o aquí mismo:
-                tps_txt = "Activados" if paquete.get('tp_order_ids') else "No"
-                msg = (f"🚀 **ORDEN EJECUTADA**\n"
-                       f"🔹 Lado: {side}\n"
-                       f"💲 Precio: {paquete['entry_price']}\n"
-                       f"🛡️ SL: {paquete['sl_price']}\n"
-                       f"🎯 TPs: {tps_txt}")
-                self.enviar_mensaje(msg)
+                self.enviar_mensaje("✅ **Orden Confirmada en Exchange**")
             else:
                 self.enviar_mensaje("❌ Fallo en la ejecución (API/OM).")
         else:
@@ -135,9 +172,9 @@ class TelegramBot:
 
     def _enviar_ayuda(self):
         msg = (
-            "🔰 **COMANDOS V18** 🔰\n\n"
-            "/long - Gamma Normal LONG (SL 2%)\n"
-            "/short - Gamma Normal SHORT (SL 2%)\n"
+            "🔰 **COMANDOS V19** 🔰\n\n"
+            "/long - Gamma Normal LONG\n"
+            "/short - Gamma Normal SHORT\n"
             "/status - Ver PnL y SL\n"
             "/balance - Ver Saldo USDT\n"
             "/panic - 🚨 CERRAR TODO"

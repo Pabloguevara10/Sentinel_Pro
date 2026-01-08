@@ -55,7 +55,7 @@ class Config:
     SYMBOL = "AAVEUSDT"
     TIMEFRAMES = ['3m', '5m', '15m', '30m', '1h', '4h', '1d']
     
-    LEVERAGE = 10 
+    LEVERAGE = 5 
     MARGIN_TYPE = 'ISOLATED' 
     POSITION_MODE = 'HEDGE'
 
@@ -92,7 +92,7 @@ class Config:
     # Configuración Gamma V4.6 (Replica Exacta Simulador)
     class GammaConfig:
         # Gestión de Capital
-        PCT_CAPITAL_PER_TRADE = 0.15  # 15% del capital por trade
+        PCT_CAPITAL_PER_TRADE = 0.05  # 5% del capital por trade
         # Nota: Usamos el apalancamiento global (5x) para el cálculo de lotaje en Shooter
         
         # Filtros de Entrada

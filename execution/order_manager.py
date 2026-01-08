@@ -1,6 +1,6 @@
 # =============================================================================
 # UBICACIÓN: execution/order_manager.py
-# DESCRIPCIÓN: ORDER MANAGER V18 (SEGURIDAD BLINDADA + LEGACY SUPPORT)
+# DESCRIPCIÓN: ORDER MANAGER V19.9 (SYNC FIX - LATENCY PROOF)
 # =============================================================================
 
 import time
@@ -10,9 +10,10 @@ from execution.director import BinanceOrderDirector
 
 class OrderManager:
     """
-    ORDER MANAGER V18:
-    - Protocolo de Seguridad (Entry -> Verify -> Protect).
-    - Soporte completo para reducciones parciales (Swing/Gamma TPs).
+    ORDER MANAGER V19.9:
+    - Corrección CRÍTICA: Se elimina la verificación redundante de positionAmt
+      en _esperar_llenado. Esto causaba "Posición no detectada" por latencia
+      de la API, generando órdenes duplicadas.
     """
     def __init__(self, config, api_manager, logger, financials):
         self.cfg = config
@@ -49,14 +50,18 @@ class OrderManager:
             return math.floor(value * factor) / factor
         except: return value
 
+    def _leer_datos_posicion(self, symbol):
+        try:
+            raw = self.api.get_position_info(symbol)
+            if not raw: return None
+            if isinstance(raw, list):
+                for p in raw:
+                    if p.get('symbol') == symbol: return p
+                return raw[0] if len(raw) > 0 else None
+            return raw
+        except: return None
+
     def ejecutar_estrategia(self, plan):
-        """
-        SECUENCIA MAESTRA DE EJECUCIÓN:
-        1. Enviar Orden (Market/Limit según Director).
-        2. Polling.
-        3. Verificar Posición.
-        4. Colocar SL y TPs (Hard Orders).
-        """
         symbol = plan['symbol']
         side = plan['side']
         
@@ -65,10 +70,10 @@ class OrderManager:
         qty_blindada = self._blindar_float(raw_qty, self.qty_precision)
         
         if qty_blindada < self.min_qty:
+            self.log.registrar_error("OM", f"Cantidad {qty_blindada} menor al mínimo ({self.min_qty})")
             return False, None
             
         plan['qty'] = qty_blindada
-        
         payload_entrada = self.director.construir_entrada(plan)
         ok_entry, resp_entry = self.api.execute_generic_order(payload_entrada)
 
@@ -79,11 +84,11 @@ class OrderManager:
         order_id = resp_entry['orderId']
         self.log.registrar_actividad("OM", f"⏳ Orden enviada ({order_id}). Esperando fill...")
         
-        # --- PASO 2 & 3: POLLING Y VERIFICACIÓN ---
+        # --- PASO 2 & 3: VERIFICACIÓN (CORREGIDO) ---
         fill_price, filled_qty = self._esperar_llenado_y_verificar_posicion(symbol, order_id, side)
         
         if fill_price == 0:
-            # Si era Limit y no se llenó, cancelamos y salimos.
+            self.log.registrar_error("OM", "⚠️ Posición no detectada tras orden. Cancelando...")
             self.api.cancel_order(symbol, order_id)
             return False, None
 
@@ -91,46 +96,63 @@ class OrderManager:
         plan['qty'] = filled_qty 
         self.log.registrar_actividad("OM", f"✅ POSICIÓN CONFIRMADA @ {fill_price}")
 
-        # --- PASO 4: PROTECCIÓN (STOP LOSS) ---
+        # --- PASO 4: STOP LOSS ---
         sl_id = self._colocar_sl_seguro(symbol, side, plan['sl_price'])
-        
         if not sl_id:
-            self.log.registrar_error("OM", "🚨 CRÍTICO: FALLO AL COLOCAR SL. CERRANDO POSICIÓN.")
+            self.log.registrar_error("OM", "🚨 CRÍTICO: FALLO SL. CERRANDO POSICIÓN.")
             self.cerrar_posicion(symbol, "EMERGENCY_SL_FAIL")
             return False, None
 
-        # --- PASO 5: TAKE PROFITS (HARD ORDERS) ---
+        # --- PASO 5: TAKE PROFITS (CORREGIDO HEDGE MODE) ---
         tp_ids = []
         if 'tp_map' in plan:
+            self.log.registrar_actividad("OM", f"⚙️ Configurando {len(plan['tp_map'])} TPs...")
+            
             for tp in plan['tp_map']:
-                tp_qty = filled_qty * tp['qty_pct']
-                tp_qty = self._blindar_float(tp_qty, self.qty_precision)
+                tp_qty = self._blindar_float(filled_qty * tp['qty_pct'], self.qty_precision)
                 
-                if tp_qty >= self.min_qty:
-                    tp_payload = self.director.construir_take_profit_limit(
-                        symbol, side, tp_qty, tp['price_target']
-                    )
+                if tp_qty < self.min_qty:
+                    continue
+
+                tp_payload = self.director.construir_take_profit_limit(
+                    symbol, side, tp_qty, tp['price_target']
+                )
+                
+                # --- PARCHE HEDGE MODE ---
+                # Eliminar reduceOnly porque provoca error -1106 en Hedge Mode
+                if 'reduceOnly' in tp_payload: del tp_payload['reduceOnly']
+                # Asegurar que indicamos qué posición cerrar
+                tp_payload['positionSide'] = side 
+
+                # Reintentos
+                tp_placed = False
+                for i in range(2): 
                     ok_tp, resp_tp = self.api.execute_generic_order(tp_payload)
                     if ok_tp:
                         tp_ids.append(resp_tp['orderId'])
                         self.fin.registrar_orden_en_libro(resp_tp)
+                        self.log.registrar_actividad("OM", f"💎 TP {tp['id']} Colocado: {tp_qty} @ {tp['price_target']}")
+                        tp_placed = True
+                        break
+                    else:
+                        self.log.registrar_error("OM", f"⚠️ Rechazo TP {tp['id']}: {resp_tp}")
+                        time.sleep(0.5)
+                
+                if not tp_placed:
+                    self.log.registrar_error("OM", f"❌ ERROR FINAL: No se pudo colocar TP {tp['id']}")
 
-        # --- PASO 6: REGISTRO FINAL ---
+        # --- PASO 6: REGISTRO ---
+        estado_tps = "HARD_TPS_OK" if len(tp_ids) > 0 else "NO_TPS_PLACED"
         paquete_completo = {
-            'id': str(uuid.uuid4())[:8],
-            'symbol': symbol, 'side': side,
+            'id': str(uuid.uuid4())[:8], 'symbol': symbol, 'side': side,
             'entry_price': fill_price, 'qty': filled_qty,
             'sl_price': plan['sl_price'], 'sl_order_id': sl_id,
-            'tp_order_ids': tp_ids,
-            'strategy': plan['strategy'],
-            'mode': plan.get('mode', 'UNKNOWN')
+            'tp_order_ids': tp_ids, 'strategy': plan['strategy'], 'mode': plan.get('mode', 'UNKNOWN')
         }
-        
-        self._registrar_en_csv(paquete_completo)
+        self._registrar_en_csv(paquete_completo, estado_tps)
         return True, paquete_completo
 
     def actualizar_stop_loss(self, symbol, side, new_sl_price):
-        """Atomic Replacement: Nuevo -> Confirmar -> Borrar Viejo."""
         new_id = self._colocar_sl_seguro(symbol, side, new_sl_price)
         if new_id:
             active, _, old_id = self.fin.verificar_si_tiene_sl_local(side)
@@ -143,7 +165,11 @@ class OrderManager:
     def _colocar_sl_seguro(self, symbol, side, price):
         price = round(float(price), self.price_precision)
         payload = self.director.construir_stop_loss(symbol, side, price)
-        
+        # SL en Director probablemente también tenga reduceOnly, pero STOP_MARKET suele manejarlo diferente.
+        # Por seguridad, aplicamos el mismo parche.
+        if 'reduceOnly' in payload: del payload['reduceOnly']
+        payload['positionSide'] = side
+
         for i in range(self.sec.MAX_RETRIES_SL):
             ok, resp = self.api.execute_generic_order(payload)
             if ok:
@@ -157,11 +183,13 @@ class OrderManager:
         self.api.cancel_all_open_orders(symbol)
         self.fin.sincronizar_libro_con_api()
         try:
-            pos = self.api.get_position_info(symbol)
-            if pos and float(pos['positionAmt']) != 0:
-                side = 'LONG' if float(pos['positionAmt']) > 0 else 'SHORT'
+            p_data = self._leer_datos_posicion(symbol)
+            if p_data and float(p_data['positionAmt']) != 0:
+                amt = float(p_data['positionAmt'])
+                side = 'LONG' if amt > 0 else 'SHORT'
                 close_side = 'SELL' if side == 'LONG' else 'BUY'
-                qty = abs(float(pos['positionAmt']))
+                qty = abs(amt)
+                # place_market_order no usa reduceOnly por defecto, es seguro.
                 self.api.place_market_order(symbol, close_side, qty, position_side=side)
                 self.log.registrar_actividad("OM", f"🏳️ Cierre Total ({reason})")
                 return True
@@ -169,39 +197,53 @@ class OrderManager:
         return False
 
     def reducir_posicion(self, symbol, qty, reason="PARTIAL"):
-        """Soporte para Swing Parciales y Cierres Manuales."""
         try:
             final_qty = self._blindar_float(qty, self.qty_precision)
-            pos = self.api.get_position_info(symbol)
-            if not pos: return False
-            p_data = pos if isinstance(pos, dict) else pos[0]
-            
-            side = 'LONG' if float(p_data['positionAmt']) > 0 else 'SHORT'
+            p_data = self._leer_datos_posicion(symbol)
+            if not p_data: return False
+            amt = float(p_data['positionAmt'])
+            if amt == 0: return False
+
+            side = 'LONG' if amt > 0 else 'SHORT'
             close_side = 'SELL' if side == 'LONG' else 'BUY'
             
-            self.api.place_market_order(symbol, close_side, final_qty, position_side=side, reduce_only=True)
+            # CORRECCIÓN PARA HEDGE MODE: reduce_only=False
+            # El cierre se garantiza por position_side + lado opuesto
+            self.api.place_market_order(symbol, close_side, final_qty, position_side=side, reduce_only=False)
             return True
         except: return False
 
     def _esperar_llenado_y_verificar_posicion(self, symbol, order_id, side):
+        """
+        CORRECCIÓN VITAL:
+        Confiamos en el estado 'FILLED' de la orden.
+        No verificamos positionAmt inmediatamente porque la API tiene lag
+        y causaba falsos negativos (órdenes duplicadas).
+        """
         for i in range(15):
             try:
                 order = self.api.client.query_order(symbol=symbol, orderId=order_id)
                 if order['status'] == 'FILLED':
-                    fill_price = float(order['avgPrice'])
-                    fill_qty = float(order['executedQty'])
-                    
-                    pos = self.api.get_position_info(symbol)
-                    if pos:
-                        amt = float(pos.get('positionAmt', 0))
-                        if (side == 'LONG' and amt > 0) or (side == 'SHORT' and amt < 0):
-                            return fill_price, fill_qty
+                    return float(order['avgPrice']), float(order['executedQty'])
             except: pass
             time.sleep(0.5)
         return 0, 0
 
-    def _registrar_en_csv(self, p):
+    def _registrar_en_csv(self, p, tp_status="HARD_TPS"):
         try:
-            line = f"{p['id']},{p.get('timestamp', '')},{p['strategy']},{p['side']},{p['entry_price']},{p['qty']},{p['sl_price']},{p['sl_order_id']},HARD_TPS,OPEN\n"
+            line = f"{p['id']},{p.get('timestamp', '')},{p['strategy']},{p['side']},{p['entry_price']},{p['qty']},{p['sl_price']},{p['sl_order_id']},{tp_status},OPEN\n"
             with open(self.cfg.FILE_LOG_ORDERS, 'a') as f: f.write(line)
         except: pass
+
+    def cancelar_orden_especifica(self, symbol, order_id, motivo="MANUAL"):
+        try:
+            self.api.cancel_order(symbol, order_id)
+            self.fin.eliminar_orden_del_libro(order_id)
+            self.log.registrar_actividad("OM", f"🗑️ Orden {order_id} cancelada ({motivo}).")
+            return True
+        except Exception as e:
+            self.log.registrar_error("OM", f"Fallo cancelando {order_id}: {e}")
+            return False
+
+    def consultar_libro_local(self):
+        return self.fin.libro_ordenes_local

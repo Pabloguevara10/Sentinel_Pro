@@ -1,0 +1,49 @@
+2026-01-07 06:27:56,414 | INFO | --------------------------------------------------
+2026-01-07 06:27:56,414 | INFO | [INIT] 🛡️ INICIANDO CONSOLA DE DIAGNÓSTICO V2.0 🛡️
+2026-01-07 06:27:56,414 | INFO | [INIT] Modo: Registro Forense de T/P activado.
+2026-01-07 06:27:58,860 | INFO | [API] Conexión Exitosa y Sincronizada.
+2026-01-07 06:27:59,386 | INFO | [OM] Calibración: Qty Prec=1, Min=0.1
+2026-01-07 06:27:59,388 | INFO | [CALIBRATION] Par: AAVEUSDT
+2026-01-07 06:27:59,391 | INFO | [CALIBRATION] Precisión Cantidad (Qty): 1 decimales
+2026-01-07 06:27:59,392 | INFO | [CALIBRATION] Precisión Precio: 2 decimales
+2026-01-07 06:27:59,392 | INFO | [CALIBRATION] Mínimo Notional Permitido: 0.1
+2026-01-07 06:28:40,614 | INFO | [USER] Opción seleccionada: 2
+2026-01-07 06:29:09,274 | INFO | [CMD] Intentando abrir LONG por $50.0 (0.2942907592701589 monedas)...
+2026-01-07 06:29:09,278 | ERROR | [CMD] Error input: 'entry_price'
+2026-01-07 06:29:22,172 | INFO | [USER] Opción seleccionada: 2
+2026-01-07 06:29:32,104 | INFO | [CMD] Intentando abrir LONG por $250.0 (1.4708477966700007 monedas)...
+2026-01-07 06:29:32,105 | ERROR | [CMD] Error input: 'entry_price'
+2026-01-07 06:30:13,764 | INFO | [USER] Opción seleccionada: 2
+2026-01-07 06:30:20,045 | INFO | [CMD] Intentando abrir SHORT por $1250.0 (7.354238983350003 monedas)...
+2026-01-07 06:30:20,046 | ERROR | [CMD] Error input: 'entry_price'
+2026-01-07 06:36:34,989 | INFO | [USER] Opción seleccionada: Q
+2026-01-07 06:38:03,972 | INFO | [INIT] ==================================================
+2026-01-07 06:38:03,972 | INFO | [INIT] 🛡️ CONSOLA DE DIAGNÓSTICO V3.0 (STABLE) 🛡️
+2026-01-07 06:38:05,890 | INFO | [API] Conexión Exitosa y Sincronizada.
+2026-01-07 06:38:06,391 | INFO | [OM] Calibración: Qty Prec=1, Min=0.1
+2026-01-07 06:38:06,392 | INFO | [CALIB] Par: AAVEUSDT
+2026-01-07 06:38:06,392 | INFO | [CALIB] Regla Decimales Cantidad: 1
+2026-01-07 06:38:06,392 | INFO | [CALIB] Regla Decimales Precio: 2
+2026-01-07 06:38:06,392 | INFO | [CALIB] Mínimo Notional: 0.1
+2026-01-07 06:38:28,482 | INFO | [CMD] Abriendo SHORT con $50.0 margin (~1.47 coins)...
+2026-01-07 06:38:29,169 | INFO | [OM] ⏳ Orden enviada (85837983). Esperando fill...
+2026-01-07 06:38:29,687 | INFO | [OM] ✅ POSICIÓN CONFIRMADA @ 169.69
+2026-01-07 06:38:29,942 | INFO | [OM] 🛡️ SL Protegido @ 174.05
+2026-01-07 06:38:29,943 | INFO | [CMD] ✅ Ejecución Exitosa @ 169.69
+2026-01-07 06:39:34,509 | INFO | [TP_TEST] Iniciando Protocolo Manual T/P...
+2026-01-07 06:39:35,298 | INFO | [TP_TEST] Detectado: SHORT | Total: 1.4
+2026-01-07 06:39:57,484 | INFO | [TP_TEST] Enviando TP1: 0.5 @ 169...
+2026-01-07 06:39:57,749 | ERROR | [TP_TEST] ❌ RECHAZO BINANCE TP1: -1106: Parameter 'reduceonly' sent when not required.
+2026-01-07 06:39:57,749 | INFO | [TP_TEST] Enviando TP2: 0.4 @ 168.5...
+2026-01-07 06:39:58,439 | ERROR | [TP_TEST] ❌ RECHAZO BINANCE TP2: -1106: Parameter 'reduceonly' sent when not required.
+2026-01-07 06:47:01,560 | INFO | [INIT] ==================================================
+2026-01-07 06:47:01,561 | INFO | [INIT] 🛡️ CONSOLA DE DIAGNÓSTICO V3.1 (HEDGE PATCH) 🛡️
+2026-01-07 06:47:02,992 | INFO | [API] Conexión Exitosa y Sincronizada.
+2026-01-07 06:47:03,323 | INFO | [OM] Calibración: Qty Prec=1, Min=0.1
+2026-01-07 06:47:03,326 | INFO | [CALIB] Par: AAVEUSDT | Qty Prec: 1 | Price Prec: 2
+2026-01-07 06:47:24,362 | INFO | [TP_TEST] Protocolo T/P HEDGE MODE...
+2026-01-07 06:47:25,042 | INFO | [TP_TEST] Detectado: SHORT | Total: 1.4
+2026-01-07 06:47:34,719 | INFO | [TP_TEST] Enviando TP1: 0.5 @ 169...
+2026-01-07 06:47:35,400 | INFO | [TP_TEST] ✅ TP1 ACEPTADO ID: 85841444
+2026-01-07 06:47:35,401 | INFO | [TP_TEST] Enviando TP2: 0.4 @ 168.5...
+2026-01-07 06:47:35,657 | INFO | [TP_TEST] ✅ TP2 ACEPTADO ID: 85841445
